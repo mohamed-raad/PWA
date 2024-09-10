@@ -11,12 +11,12 @@
   "categories": [
     "utilities"
   ],
-  "screenshots" : [
+  "screenshots": [
     {  
       "src": "icons/screenshot.jpg",
       "sizes": "1280x721",
       "type": "image/jpg",
-      "platform": "wide",
+      "platform": "wide"
     }
   ],
   "icons": [
