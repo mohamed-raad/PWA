@@ -3,10 +3,10 @@
   "display": "standalone",
   "name": "Reactive RPM",
   "orientation": "any",
-  "scope": "/",
+  "scope": "/PWA",
   "short_name": "R-RPM",
   "start_url": "/PWA",
-  "theme_color": "#ffffff",
+  "theme_color": "#6596ff",
   "description": "A web app for configuring ESP32 RPM reactive LEDs",
   "categories": [
     "utilities"
@@ -19,10 +19,12 @@
       "purpose": "any"
     },
     {
-      "src": "icons/icon-512x512.png",
+      "src": "icons/icon-512-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     }
-  ]
+  ],
+  "id": "RRPM",
+  "lang": "en"
 }
