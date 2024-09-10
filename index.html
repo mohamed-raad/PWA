@@ -374,6 +374,16 @@
           const showRealTimeRPMCheckbox = document.getElementById('showRealTimeRPM');
           const showSliderCheckbox = document.getElementById('showSlider');
           const hideAllCheckbox = document.getElementById('hideAll');
+          const esp32Form = document.getElementById('esp32Form');
+          const savedIPsList = document.getElementById('savedIPsList');
+
+          const DEFAULT_IP = '192.168.4.1';
+          let baseURL = localStorage.getItem('baseURL') || DEFAULT_IP;
+
+        function updateBaseURL(newURL) {
+          baseURL = newURL;
+          localStorage.setItem('baseURL', newURL);
+        }
           
         let RPMInterval = 350; // Default RPM interval in milliseconds
         let realTimeRPMInterval;
@@ -387,7 +397,7 @@
             data[key] = value;
           });
           try {
-            await fetch('http://192.168.4.1/UpdateInterval', {
+            await fetch('https://${DEFAULT_IP}/UpdateInterval', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(data),
@@ -401,7 +411,7 @@
 
         StartRPMRequestsButton.addEventListener('click', async () => {
           try {
-            await fetch('http://192.168.4.1/StartRPMRequests', { method: 'POST' });
+            await fetch('https://${DEFAULT_IP}/StartRPMRequests', { method: 'POST' });
             alert('RPM requests started!');
           } catch (error) {
             console.error('Error starting RPM requests:', error);
@@ -411,7 +421,7 @@
 
         StopRPMRequestsButton.addEventListener('click', async () => {
           try {
-            await fetch('http://192.168.4.1/StopRPMRequests', { method: 'POST' });
+            await fetch('https://${DEFAULT_IP}/StopRPMRequests', { method: 'POST' });
             alert('RPM requests stopped!');
           } catch (error) {
             console.error('Error stopping RPM requests:', error);
@@ -428,7 +438,7 @@
             data[key] = value;
           });
           try {
-            await fetch('http://192.168.4.1/UpdateFlashSettings', {
+            await fetch('https://${DEFAULT_IP}/UpdateFlashSettings', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(data),
@@ -448,7 +458,7 @@
             data[key] = value;
           });
           try {
-            await fetch('http://192.168.4.1/UpdateLEDColors', {
+            await fetch('https://${DEFAULT_IP}/UpdateLEDColors', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(data),
@@ -467,7 +477,7 @@
           // Load saved IPs from the server when the page loads
           async function loadSavedIPs() {
             try {
-              const response = await fetch('http://192.168.4.1/getSavedIPs');
+              const response = await fetch('https://${DEFAULT_IP}/getSavedIPs');
               const savedIPs = await response.json();
               savedIPsList.innerHTML = '';
               savedIPs.forEach(ip => {
@@ -486,7 +496,7 @@
             const ipAddress = document.getElementById('esp32IP').value;
 
             try {
-              await fetch('http://192.168.4.1/saveESP32IP', {
+              await fetch('https://${DEFAULT_IP}/saveESP32IP', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ip: ipAddress }),
@@ -506,7 +516,7 @@
         document.getElementById('baudRateForm').addEventListener('submit', async function(event) {
           event.preventDefault();
           const baudRate = document.getElementById('baudRate').value;
-          const response = await fetch('http://192.168.4.1/setBaudRate', {
+          const response = await fetch('https://${DEFAULT_IP}/setBaudRate', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/x-www-form-urlencoded',
@@ -524,7 +534,7 @@
 
         // Fetch and display the current baud rate on page load
         window.addEventListener('load', async () => {
-          const response = await fetch('http://192.168.4.1/getBaudRate');
+          const response = await fetch('https://${DEFAULT_IP}/getBaudRate');
           const currentBaudRate = await response.text();
           document.getElementById('currentBaudRate').innerText = currentBaudRate;
         });
@@ -537,7 +547,7 @@
             data[key] = value;
           });
           try {
-            await fetch('http://192.168.4.1/ConnectOBD', {
+            await fetch('https://${DEFAULT_IP}/ConnectOBD', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(data),
@@ -553,7 +563,7 @@
 
         getMILCodesButton.addEventListener('click', async () => {
           try {
-            const response = await fetch('http://192.168.4.1/getMILCodes');
+            const response = await fetch('https://${DEFAULT_IP}/getMILCodes');
             const data = await response.json();
             alert(`MIL Codes: ${JSON.stringify(data)}`);
           } catch (error) {
@@ -564,7 +574,7 @@
 
         clearMILCodesButton.addEventListener('click', async () => {
           try {
-            await fetch('http://192.168.4.1/clearMILCodes', { method: 'POST' });
+            await fetch('https://${DEFAULT_IP}/clearMILCodes', { method: 'POST' });
             alert('MIL codes cleared successfully.');
           } catch (error) {
             console.error('Error clearing MIL codes:', error);
@@ -624,7 +634,7 @@
 
         async function updateLEDs(value) {
             try {
-                await fetch('http://192.168.4.1/ledslider', {
+                await fetch('https://${DEFAULT_IP}/ledslider', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ value: value })
@@ -637,7 +647,7 @@
         // Function to fetch the current RPM from the server
         async function fetchActualRPM() {
             try {
-                const response = await fetch('http://192.168.4.1/StatusGetRPM');
+                const response = await fetch('https://${DEFAULT_IP}/StatusGetRPM');
                 const rpm = await response.text();
                 if (showRealTimeRPMCheckbox.checked && !hideAllCheckbox.checked) {
                     realTimeRPM.textContent = rpm;
