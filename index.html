@@ -1,0 +1,678 @@
+<html lang="en">
+  <head>
+    <link rel="manifest" href="/manifest.json" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ESP32 RPM Reactive LEDs</title>
+    <style>
+      body, h1, h2, h3, p, input, select, label, a {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+      }
+      body {
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          background-color: #f7f7f7;
+          color: #333;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+      }
+      .intro-container {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-color: #005cbf;
+          color: white;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          animation: fadeOut 2s ease-out 3s forwards;
+          z-index: 1000;
+      }
+      .intro-title {
+          font-size: 3rem;
+          font-weight: bold;
+          letter-spacing: 2px;
+          animation: zoomIn 2s ease-out 1s forwards;
+          opacity: 0;
+          transform: scale(0.5);
+      }
+      .intro-subtitle {
+          font-size: 1.5rem;
+          margin-top: 20px;
+          opacity: 0;
+          animation: slideUp 1s ease-out 2s forwards;
+          transform: translateY(30px);
+      }
+      @keyframes fadeOut {
+          100% {
+              opacity: 0;
+              visibility: hidden;
+              z-index: -1;
+          }
+      }
+      @keyframes zoomIn {
+          100% {
+              opacity: 1;
+              transform: scale(1);
+          }
+      }
+      @keyframes slideUp {
+          100% {
+              opacity: 1;
+              transform: translateY(0);
+          }
+      }
+      header {
+          background-color: #005cbf;
+          color: #fff;
+          padding: 15px;
+          width: 100%;
+          text-align: center;
+          margin-bottom: 20px;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+          border-radius: 8px;
+      }
+      section {
+          background-color: #fff;
+          width: 100%;
+          max-width: 900px;
+          border-radius: 8px;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+          padding: 20px;
+          margin-bottom: 20px;
+      }
+      form {
+          display: flex;
+          flex-direction: column;
+          gap: 15px;
+          margin-top: 10px;
+      }
+      label {
+          font-weight: bold;
+          margin-bottom: 5px;
+      }
+      input[type="text"], input[type="number"], select {
+          padding: 10px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          font-size: 16px;
+          width: 100%;
+          max-width: 400px;
+      }
+      input[type="submit"], button {
+          background-color: #005cbf;
+          color: white;
+          padding: 10px;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          transition: background-color 0.3s ease;
+          font-size: 16px;
+          max-width: 150px;
+          align-self: flex-start;
+      }
+      input[type="submit"]:hover, button:hover {
+          background-color: #0041a5;
+      }
+      .color-picker {
+          padding: 0;
+          border: none;
+          cursor: pointer;
+          width: 40px;
+          height: 40px;
+      }
+      .led-container {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 10px;
+      }
+      .gauge-container {
+          display: flex;
+          justify-content: center;
+          margin-top: 20px;
+      }
+      .flex-container {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 20px;
+          justify-content: space-between;
+      }
+      a {
+          color: #005cbf;
+          text-decoration: none;
+          font-size: 16px;
+      }
+      a:hover {
+          text-decoration: underline;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      @media (max-width: 600px) {
+          .flex-container {
+              flex-direction: column;
+          }
+          .led-container {
+              grid-template-columns: repeat(2, 1fr);
+          }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="intro-container">
+      <div class="intro-title">Reactive RPM</div>
+      <div class="intro-subtitle">Your exciting driving companion</div>
+    </div>
+
+    <header>
+      <h1>RPM Reactive LEDs</h1>
+      <p>Current Baud Rate: <span id="currentBaudRate">9600</span></p>
+    </header>
+    <section>
+      <h2>ESP32 Configuration</h2>
+      <form id="esp32Form">
+        <label for="esp32IP">ESP32 IP Address:</label>
+        <input type="text" id="esp32IP" name="esp32IP" placeholder="192.168.1.100" required />
+        <input type="submit" value="Save and Connect" />
+      </form>
+
+     <h3>Saved ESP32 IPs</h3>
+      <ul id="savedIPsList"></ul>
+    </section>
+
+    <section>
+      <h2>Current RPM</h2>
+      <p>Real-time RPM: <span id="realTimeRPM">0</span> RPM</p>
+      <p>Current RPM: <span id="rpmValue">0</span></p>
+      <input type="range" id="rpmSlider" min="1000" max="7000" step="250" value="1000" />
+      <input type="checkbox" id="showRealTimeRPM" /> Show Real-time RPM<br>
+      <input type="checkbox" id="showSlider" /> Show Slider Value<br>
+      <input type="checkbox" id="hideAll" /> Hide All<br>
+    </section>
+
+    <section>
+      <h2>RPM Request Interval</h2>
+      <form id="intervalForm">
+        <label for="RPMInterval">RPM Request Interval (ms):</label>
+        <input type="number" id="RPMInterval" name="RPMInterval" min="100" value="350" />
+        <input type="submit" value="Update Interval" />
+      </form>
+    </section>
+
+    <section>
+      <h2>RPM Request Control</h2>
+      <button id="StartRPMRequests">Start</button>
+      <button id="StopRPMRequests">Stop</button>
+    </section>
+
+    <section>
+      <h2>LED Colors Configuration</h2>
+      <form id="ledForm">
+        <div class="led-container">
+          <div>
+            <label for="led0">LED 1:</label>
+            <input
+              type="color"
+              class="color-picker"
+              name="led0"
+              value="#00FF00"
+            />
+            <label for="rpm0">RPM Threshold:</label>
+            <input type="number" name="rpm0" min="0" max="7000" value="1300" />
+          </div>
+          <div>
+            <label for="led1">LED 2:</label>
+            <input
+              type="color"
+              class="color-picker"
+              name="led1"
+              value="#00FF00"
+            />
+            <label for="rpm1">RPM Threshold:</label>
+            <input type="number" name="rpm1" min="0" max="7000" value="1700" />
+          </div>
+          <div>
+            <label for="led2">LED 3:</label>
+            <input
+              type="color"
+              class="color-picker"
+              name="led2"
+              value="#FFFF00"
+            />
+            <label for="rpm2">RPM Threshold:</label>
+            <input type="number" name="rpm2" min="0" max="7000" value="2200" />
+          </div>
+          <div>
+            <label for="led3">LED 4:</label>
+            <input
+              type="color"
+              class="color-picker"
+              name="led3"
+              value="#FFFF00"
+            />
+            <label for="rpm3">RPM Threshold:</label>
+            <input type="number" name="rpm3" min="0" max="7000" value="2500" />
+          </div>
+          <div>
+            <label for="led4">LED 5:</label>
+            <input
+              type="color"
+              class="color-picker"
+              name="led4"
+              value="#800080"
+            />
+            <label for="rpm4">RPM Threshold:</label>
+            <input type="number" name="rpm4" min="0" max="7000" value="2900" />
+          </div>
+          <div>
+            <label for="led5">LED 6:</label>
+            <input
+              type="color"
+              class="color-picker"
+              name="led5"
+              value="#800080"
+            />
+            <label for="rpm5">RPM Threshold:</label>
+            <input type="number" name="rpm5" min="0" max="7000" value="3300" />
+          </div>
+          <div>
+            <label for="led6">LED 7:</label>
+            <input
+              type="color"
+              class="color-picker"
+              name="led6"
+              value="#FF0000"
+            />
+            <label for="rpm6">RPM Threshold:</label>
+            <input type="number" name="rpm6" min="0" max="7000" value="3700" />
+          </div>
+          <div>
+            <label for="led7">LED 8:</label>
+            <input
+              type="color"
+              class="color-picker"
+              name="led7"
+              value="#FF0000"
+            />
+            <label for="rpm7">RPM Threshold:</label>
+            <input type="number" name="rpm7" min="0" max="7000" value="4000" />
+          </div>
+        </div>
+        <input type="submit" value="Update LED Colors" />
+      </form>
+    </section>
+
+    <section>
+      <h2>LED Flashing Configuration</h2>
+      <form id="flashForm">
+        <label for="flashColor">Flash Color:</label>
+        <input type="color" id="flashColor" name="flashColor" value="#800080" />
+        <label for="flashSpeed">Flash Speed (ms):</label>
+        <input type="number" id="flashSpeed" name="flashSpeed" min="100" value="500" />
+        <label for="flashThreshold">RPM Threshold:</label>
+        <input type="number" id="flashThreshold" name="flashThreshold" min="0" max="7000" value="4500" />
+        <input type="submit" value="Update Flash Settings" />
+      </form>
+    </section>
+
+    <section>
+      <h2>OBD-II Configuration</h2>
+      <form id="obdForm">
+        <label for="obdName">OBD-II Name:</label>
+        <input type="text" name="obdName" required />
+        <label for="obdPassword">OBD-II PIN Code:</label>
+        <input type="text" name="obdPassword" required />
+        <input type="submit" value="Apply and Connect" />
+      </form>
+    </section>
+
+    <section>
+      <h2>Baud Rate Configuration</h2>
+      <form id="baudRateForm">
+        <label for="baudRate">Select Baud Rate:</label>
+        <select id="baudRate" name="baudRate">
+          <option value="9600">9600</option>
+          <option value="19200">19200</option>
+          <option value="38400">38400</option>
+          <option value="57600">57600</option>
+          <option value="115200">115200</option>
+        </select>
+        <input type="submit" value="Set Baud Rate" />
+      </form>
+    </section>
+
+    <section>
+      <h2>Car Diagnostic Tools</h2>
+      <div class="flex-container">
+        <button id="getMILCodes">Fetch MIL Codes</button>
+        <button id="clearMILCodes">Clear MIL Codes</button>
+      </div>
+    </section>
+    
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          const ledForm = document.getElementById('ledForm');
+          const obdForm = document.getElementById('obdForm');
+          const rpmSlider = document.getElementById('rpmSlider');
+          const rpmValue = document.getElementById('rpmValue');
+          const getMILCodesButton = document.getElementById('getMILCodes');
+          const clearMILCodesButton = document.getElementById('clearMILCodes');
+          const intervalForm = document.getElementById('intervalForm');
+          const StartRPMRequestsButton = document.getElementById('StartRPMRequests');
+          const StopRPMRequestsButton = document.getElementById('StopRPMRequests');
+          const realTimeRPM = document.getElementById('realTimeRPM');        
+          const showRealTimeRPMCheckbox = document.getElementById('showRealTimeRPM');
+          const showSliderCheckbox = document.getElementById('showSlider');
+          const hideAllCheckbox = document.getElementById('hideAll');
+          
+        let RPMInterval = 350; // Default RPM interval in milliseconds
+        let realTimeRPMInterval;
+    
+ 
+        document.getElementById('intervalForm').addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const formData = new FormData(event.target);
+          const data = {};
+          formData.forEach((value, key) => {
+            data[key] = value;
+          });
+          try {
+            await fetch('http://192.168.4.1/UpdateInterval', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(data),
+            });
+            alert('Interval updated successfully!');
+          } catch (error) {
+            console.error('Error updating interval:', error);
+            alert('Failed to update interval.');
+          }
+        });
+
+        StartRPMRequestsButton.addEventListener('click', async () => {
+          try {
+            await fetch('http://192.168.4.1/StartRPMRequests', { method: 'POST' });
+            alert('RPM requests started!');
+          } catch (error) {
+            console.error('Error starting RPM requests:', error);
+            alert('Failed to start RPM requests.');
+          }
+        });
+
+        StopRPMRequestsButton.addEventListener('click', async () => {
+          try {
+            await fetch('http://192.168.4.1/StopRPMRequests', { method: 'POST' });
+            alert('RPM requests stopped!');
+          } catch (error) {
+            console.error('Error stopping RPM requests:', error);
+            alert('Failed to stop RPM requests.');
+          }
+        });
+
+
+        document.getElementById('flashForm').addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const formData = new FormData(event.target);
+          const data = {};
+          formData.forEach((value, key) => {
+            data[key] = value;
+          });
+          try {
+            await fetch('http://192.168.4.1/UpdateFlashSettings', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(data),
+            });
+            alert('Flash settings updated successfully!');
+          } catch (error) {
+            console.error('Error updating flash settings:', error);
+            alert('Failed to update flash settings.');
+          }
+        });
+
+        ledForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const formData = new FormData(ledForm);
+          const data = {};
+          formData.forEach((value, key) => {
+            data[key] = value;
+          });
+          try {
+            await fetch('http://192.168.4.1/UpdateLEDColors', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(data),
+            });
+            alert('LED colors updated successfully!');
+          } catch (error) {
+            console.error('Error updating LED colors:', error);
+            alert('Failed to update LED colors.');
+          }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+          const esp32Form = document.getElementById('esp32Form');
+          const savedIPsList = document.getElementById('savedIPsList');
+          
+          // Load saved IPs from the server when the page loads
+          async function loadSavedIPs() {
+            try {
+              const response = await fetch('http://192.168.4.1/getSavedIPs');
+              const savedIPs = await response.json();
+              savedIPsList.innerHTML = '';
+              savedIPs.forEach(ip => {
+                const listItem = document.createElement('li');
+                listItem.textContent = ip;
+                savedIPsList.appendChild(listItem);
+              });
+            } catch (error) {
+              console.error('Error loading saved IPs:', error);
+            }
+          }
+
+          // Handle ESP32 IP address form submission
+          esp32Form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const ipAddress = document.getElementById('esp32IP').value;
+
+            try {
+              await fetch('http://192.168.4.1/saveESP32IP', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ip: ipAddress }),
+              });
+              alert('ESP32 IP saved and connected!');
+              loadSavedIPs(); // Reload the list of saved IPs
+            } catch (error) {
+              console.error('Error saving ESP32 IP:', error);
+              alert('Failed to save ESP32 IP.');
+            }
+          });
+
+          // Automatically load the saved IPs on page load
+          loadSavedIPs();
+        });
+
+        document.getElementById('baudRateForm').addEventListener('submit', async function(event) {
+          event.preventDefault();
+          const baudRate = document.getElementById('baudRate').value;
+          const response = await fetch('http://192.168.4.1/setBaudRate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'baudRate=' + baudRate
+          });
+
+          if (response.ok) {
+            const currentBaudRate = await response.text();
+            document.getElementById('currentBaudRate').innerText = currentBaudRate;
+          } else {
+            alert('Failed to set baud rate');
+          }
+        });
+
+        // Fetch and display the current baud rate on page load
+        window.addEventListener('load', async () => {
+          const response = await fetch('http://192.168.4.1/getBaudRate');
+          const currentBaudRate = await response.text();
+          document.getElementById('currentBaudRate').innerText = currentBaudRate;
+        });
+
+        obdForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const formData = new FormData(obdForm);
+          const data = {};
+          formData.forEach((value, key) => {
+            data[key] = value;
+          });
+          try {
+            await fetch('http://192.168.4.1/ConnectOBD', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(data),
+            });
+            alert('OBD-II configuration applied.');
+          } catch (error) {
+            console.error('Error connecting OBD-II:', error);
+            alert('Failed to connect to OBD-II.');
+          }
+        });
+
+
+
+        getMILCodesButton.addEventListener('click', async () => {
+          try {
+            const response = await fetch('http://192.168.4.1/getMILCodes');
+            const data = await response.json();
+            alert(`MIL Codes: ${JSON.stringify(data)}`);
+          } catch (error) {
+            console.error('Error fetching MIL codes:', error);
+            alert('Failed to fetch MIL codes.');
+          }
+        });
+
+        clearMILCodesButton.addEventListener('click', async () => {
+          try {
+            await fetch('http://192.168.4.1/clearMILCodes', { method: 'POST' });
+            alert('MIL codes cleared successfully.');
+          } catch (error) {
+            console.error('Error clearing MIL codes:', error);
+            alert('Failed to clear MIL codes.');
+          }
+        });
+
+        function handleCheckboxChange(checkbox) {
+            if (checkbox.checked) {
+                [showRealTimeRPMCheckbox, showSliderCheckbox, hideAllCheckbox].forEach(cb => {
+                    if (cb !== checkbox) {
+                        cb.checked = false;
+                    }
+                });
+                updateVisibility();
+            }
+        }
+
+        showRealTimeRPMCheckbox.addEventListener('change', () => handleCheckboxChange(showRealTimeRPMCheckbox));
+        showSliderCheckbox.addEventListener('change', () => handleCheckboxChange(showSliderCheckbox));
+        hideAllCheckbox.addEventListener('change', () => handleCheckboxChange(hideAllCheckbox));
+
+        // Update the visibility of elements based on the checkboxes
+        function updateVisibility() {
+            if (hideAllCheckbox.checked) {
+                stopFetchingRPM();
+                realTimeRPM.textContent = '0';
+                rpmSlider.classList.add('hidden');
+                realTimeRPM.classList.add('hidden');
+            } else if (showSliderCheckbox.checked) {
+                rpmSlider.classList.remove('hidden');
+                realTimeRPM.classList.add('hidden');
+                rpmValue.textContent = rpmSlider.value;
+                updateLEDs(parseInt(rpmSlider.value));
+                
+            } else if (showRealTimeRPMCheckbox.checked) {
+                rpmSlider.classList.add('hidden');
+                rpmSlider.classList.add('hidden');
+                realTimeRPM.classList.remove('hidden');
+                startFetchingRPM(); // Start fetching RPM if not hidden
+            } else {
+                rpmSlider.classList.add('hidden');
+                realTimeRPM.classList.add('hidden');
+                stopFetchingRPM();
+                realTimeRPM.textContent = '0';
+            }
+        }
+
+        // Update slider value display and LEDs
+        rpmSlider.addEventListener('input', (event) => {
+           rpmValue.textContent = event.target.value;
+           if (showSliderCheckbox.checked && !hideAllCheckbox.checked) {
+               realTimeRPM.textContent = sliderValue;
+               updateLEDs(parseInt(event.target.value));
+           }
+        });
+
+        async function updateLEDs(value) {
+            try {
+                await fetch('http://192.168.4.1/ledslider', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ value: value })
+                });
+            } catch (error) {
+                console.error('Error updating LEDs:', error);
+            }
+        }
+
+        // Function to fetch the current RPM from the server
+        async function fetchActualRPM() {
+            try {
+                const response = await fetch('http://192.168.4.1/StatusGetRPM');
+                const rpm = await response.text();
+                if (showRealTimeRPMCheckbox.checked && !hideAllCheckbox.checked) {
+                    realTimeRPM.textContent = rpm;
+                }
+            } catch (error) {
+                console.error('Error fetching RPM:', error);
+            }
+        }
+
+        function startFetchingRPM() {
+            if (!realTimeRPMInterval) {
+                realTimeRPMInterval = setInterval(fetchActualRPM, RPMInterval);
+            }
+        }
+
+        function stopFetchingRPM() {
+            if (realTimeRPMInterval) {
+                clearInterval(realTimeRPMInterval);
+                realTimeRPMInterval = null;
+            }
+        }
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
+                    // Registration successful
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                }, function(err) {
+                    // Registration failed
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+
+         
+      });
+    </script>
+  </body>
+</html>
