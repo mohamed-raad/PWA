@@ -11,6 +11,14 @@
   "categories": [
     "utilities"
   ],
+  "screenshots" : [
+    {  
+      "src": "icons/screenshot.jpg",
+      "sizes": "1280x721",
+      "type": "image/jpg",
+      "platform": "wide",
+    }
+  ]
   "icons": [
     {
       "src": "icons/icon-192-192.png",
