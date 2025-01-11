@@ -569,14 +569,15 @@
             document.getElementById('testRPM').addEventListener('click', async () => {
                 let currentRPM = 0;
                 const maxRPM = 7000;
-                const increment = 350;
+                const increment = 100;
                 const delay = 350;
 
                 function simulateRPMIncrease() {
                     if (currentRPM <= maxRPM) {
+
                         fetch('http://192.168.4.1/UpdateRPM?value=' + currentRPM);
                         currentRPM += increment;
-                        setTimeout(simulateRPMIncrease, delay);
+                        setTimeout(simulateRPMIncrease, 350);
                     } else {
                         simulateRPMDecrease();
                     }
@@ -584,9 +585,10 @@
 
                 function simulateRPMDecrease() {
                     if (currentRPM >= 0) {
+
                         fetch('http://192.168.4.1/UpdateRPM?value=' + currentRPM);
                         currentRPM -= increment;
-                        setTimeout(simulateRPMDecrease, delay);
+                        setTimeout(simulateRPMDecrease, 350);
                     }
                 }
 
