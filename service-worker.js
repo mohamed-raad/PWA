@@ -1,11 +1,12 @@
-const CACHE_NAME = 'pwa-cache-v2';
+const CACHE_NAME = 'pwa-cache-v3';
 const urlsToCache = [
   '/R-PM/',
   '/R-PM/index.html',
   '/R-PM/manifest.json',
   '/R-PM/icon-192x192.png',
   '/R-PM/icon-512x512.png',
-  '/R-PM/favicon.ico'
+  '/R-PM/favicon.ico',
+  '/R-PM/service-worker.js'
 ];
 
 self.addEventListener('install', event => {
