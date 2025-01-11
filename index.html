@@ -314,26 +314,285 @@
         .hidden {
           display: none;
         }
+
+        .side-panel {
+            height: 100%;
+            width: 0;
+            position: fixed;
+            z-index: 1;
+            top: 0;
+            left: 0;
+            background-color: #f8f9fa;
+            overflow-x: hidden;
+            transition: 0.5s;
+            padding-top: 60px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+        }
+
+        .side-panel button {
+            padding: 10px 15px;
+            text-align: left;
+            border: none;
+            background: none;
+            display: block;
+            width: 100%;
+            cursor: pointer;
+            color: #333;
+        }
+
+        .side-panel button:hover {
+            background-color: #e9ecef;
+        }
+
+        .nav-button {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            font-size: 2rem;
+            cursor: pointer;
+            background: none;
+            border: none;
+            z-index: 2;
+        }
+
+        .side-panel.open {
+            width: 250px;
+        }
     }
     </style>
 </head>
 <body>
-    <nav>
+    <div id="sidePanel" class="side-panel">
         <button onclick="showSection('gauge')">Gauge</button>
         <button onclick="showSection('rpmConfig')">RPM Config</button>
         <button onclick="showSection('ledConfig')">LED Configuration</button>
+        <button onclick="showSection('flashConfig')">Flash Config</button>
         <button onclick="showSection('mil')">MIL</button>
         <button onclick="showSection('settings')">Settings</button>
-    </nav>
+        <button id="nightModeToggle">Night Mode</button>
+        <div id="connectionStatus" style="padding: 10px; text-align: center;"></div>
+    </div>
+    <button id="navButton" class="nav-button">☰</button>
+    <style>
+        body.dark-mode {
+            background-color: #1a1a1a;
+            color: #f0f0f0;
+        }
+        body.dark-mode header {
+            background-color: #2a2a2a;
+            color: #f0f0f0;
+        }
+        body.dark-mode section {
+            background-color: #2a2a2a;
+            color: #f0f0f0;
+        }
+        body.dark-mode input[type='text'],
+        body.dark-mode input[type='number'],
+        body.dark-mode select {
+            background-color: #3a3a3a;
+            color: #f0f0f0;
+            border-color: #555;
+        }
+        body.dark-mode input[type='submit'],
+        body.dark-mode button {
+            background-color: #3a3a3a;
+            color: #f0f0f0;
+        }
+        body.dark-mode input[type='submit']:hover,
+        body.dark-mode button:hover {
+            background-color: #4a4a4a;
+        }
+        body.dark-mode a {
+            color: #66a3ff;
+        }
+        body.dark-mode a:hover {
+            color: #80b3ff;
+        }
+        body {
+            overflow-y: hidden;
+        }
+    </style>
+    <script>
+        const nightModeToggle = document.getElementById('nightModeToggle');
+        const body = document.body;
+        const savedTheme = localStorage.getItem('theme');
+        const connectionStatus = document.getElementById('connectionStatus');
+        let connectionInterval;
+
+        if (savedTheme === 'dark') {
+            body.classList.add('dark-mode');
+        }
+
+        nightModeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            const theme = body.classList.contains('dark-mode') ? 'dark' : 'light';
+            localStorage.setItem('theme', theme);
+        });
+
+        async function fetchConfig() {
+            try {
+                const response = await fetch('http://192.168.4.1/GetConfig');
+                const data = await response.json();
+                
+                for (let i = 0; i < 8; i++) {
+                    document.querySelector(`input[name="led${i}"]`).value = '#' + data.ledColors[i];
+                    document.querySelector(`input[name="rpm${i}"]`).value = data.rpmThresholds[i];
+                }
+                document.getElementById('flashColor').value = '#' + data.flashColor;
+                document.getElementById('flashSpeed').value = data.flashSpeed;
+                document.getElementById('flashThreshold').value = data.flashThreshold;
+            } catch (error) {
+                console.error('Error fetching config:', error);
+            }
+        }
+
+        async function checkConnection() {
+            try {
+                const response = await fetch('http://192.168.4.1/', { method: 'HEAD', mode: 'no-cors' });
+                if (response.ok) {
+                    connectionStatus.textContent = 'ESP32: Connected';
+                    connectionStatus.style.color = 'green';
+                    clearInterval(connectionInterval);
+                } else {
+                    connectionStatus.textContent = 'ESP32: Not Connected';
+                    connectionStatus.style.color = 'red';
+                }
+            } catch (error) {
+                connectionStatus.textContent = 'ESP32: Not Connected';
+                connectionStatus.style.color = 'red';
+            }
+        }
+
+        function startConnectionCheck() {
+            connectionInterval = setInterval(checkConnection, 5000);
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            await fetchConfig();
+            await checkConnection();
+            if (connectionStatus.textContent !== 'ESP32: Connected') {
+                startConnectionCheck();
+            }
+        });
+
+        document.getElementById('connectionStatus').addEventListener('click', async () => {
+            await checkConnection();
+            if (connectionStatus.textContent !== 'ESP32: Connected') {
+                startConnectionCheck();
+            }
+        });
+    </script>
 
     <section id="gauge">
         <h2>Current RPM</h2>
         <div class="gauge-container">
             <canvas id="rpmGauge" width="280" height="280"></canvas>
             <div class="gauge-value" id="realTimeRPM">0</div>
-            <div class="gauge-label">RPM</div>
+        <div class="gauge-label">RPM</div>
         </div>
+        <script>
+         function drawGauge(rpm) {
+            const canvas = document.getElementById('rpmGauge');
+            const ctx = canvas.getContext('2d');
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = Math.min(centerX, centerY) - 20;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw background arc
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, Math.PI * 0.75, Math.PI * 2.25, false);
+            ctx.lineWidth = 20;
+            ctx.strokeStyle = '#e5e7eb';
+            ctx.stroke();
+
+            // Calculate progress
+            const progress = rpm / 7000;
+            const endAngle = (Math.PI * 0.75) + (Math.PI * 1.5 * progress);
+
+            // Create gradient for progress arc
+            const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+            gradient.addColorStop(0, '#3b82f6');
+            gradient.addColorStop(1, '#2563eb');
+
+            // Draw progress arc
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, Math.PI * 0.75, endAngle, false);
+            ctx.lineWidth = 20;
+            ctx.strokeStyle = gradient;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            // Draw ticks
+            for (let i = 0; i <= 14; i++) {
+                const angle = (Math.PI * 0.75) + (Math.PI * 1.5 * (i / 14));
+                const tickLength = i % 2 === 0 ? 15 : 10;
+                
+                const startX = centerX + (radius - 25) * Math.cos(angle);
+                const startY = centerY + (radius - 25) * Math.sin(angle);
+                const endX = centerX + (radius - 25 - tickLength) * Math.cos(angle);
+                const endY = centerY + (radius - 25 - tickLength) * Math.sin(angle);
+
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(endX, endY);
+                ctx.lineWidth = i % 2 === 0 ? 3 : 2;
+                ctx.strokeStyle = '#9ca3af';
+                ctx.stroke();
+
+                // Add numbers for major ticks
+                if (i % 2 === 0) {
+                    const value = Math.round((i / 14) * 7000);
+                    const textX = centerX + (radius - 45) * Math.cos(angle);
+                    const textY = centerY + (radius - 45) * Math.sin(angle);
+
+                    ctx.save();
+                    ctx.translate(textX, textY);
+                    ctx.rotate(angle + Math.PI / 2);
+                    ctx.font = '12px Arial';
+                    ctx.fillStyle = '#4b5563';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(value, 0, 0);
+                    ctx.restore();
+                }
+            }
+
+            // Update digital display
+            document.getElementById('realTimeRPM').textContent = Math.round(rpm);
+        }
+        </script>
         <button id="testRPM">Test RPM</button>
+        <script>
+            document.getElementById('testRPM').addEventListener('click', async () => {
+                let currentRPM = 0;
+                const maxRPM = 7000;
+                const increment = 100;
+                const delay = 20;
+
+                function simulateRPMIncrease() {
+                    if (currentRPM <= maxRPM) {
+                        fetch('http://192.168.4.1/UpdateRPM?value=' + currentRPM);
+                        currentRPM += increment;
+                        setTimeout(simulateRPMIncrease, delay);
+                    } else {
+                        simulateRPMDecrease();
+                    }
+                }
+
+                function simulateRPMDecrease() {
+                    if (currentRPM >= 0) {
+                        fetch('http://192.168.4.1/UpdateRPM?value=' + currentRPM);
+                        currentRPM -= increment;
+                        setTimeout(simulateRPMDecrease, delay);
+                    }
+                }
+
+                simulateRPMIncrease();
+            });
+        </script>
     </section>
 
     <section id="rpmConfig" class="hidden">
@@ -403,6 +662,9 @@
             </div>
             <button type="submit">Update LED Colors</button>
         </form>
+    </section>
+
+    <section id="flashConfig" class="hidden">
         <h2>LED Flashing Config</h2>
         <form id="flashForm">
             <label for="flashColor">Flash Color:</label>
@@ -572,7 +834,6 @@
                     try {
                         const response = await fetch('http://192.168.4.1/GetRealTimeRPM');
                         const data = await response.json();
-                        drawGauge(data.rpm);
                     } catch (error) {
                         console.error('Error fetching RPM:', error);
                     }
@@ -752,6 +1013,13 @@
 
             // Initialize the first section
             showSection('gauge');
+
+            const navButton = document.getElementById('navButton');
+            const sidePanel = document.getElementById('sidePanel');
+
+            navButton.addEventListener('click', () => {
+                sidePanel.classList.toggle('open');
+            });
         });
     </script>
   <script>
