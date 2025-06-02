@@ -3,1055 +3,1307 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-startup-image" href="icon-512x512.png">
-    <link rel="manifest" href="manifest.json?v=1">
-    <title>ESP32 RPM Reactive LEDs</title>
+    <title>CSWIP 3.1 AI Mock Exam ✨ (Google Sheets Edition)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-          background-color: #fcfbfb;
-          color: #333;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: start;
-          min-height: 100vh;
-          padding: 10px;
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Tailwind gray-900 */
+            color: #e2e8f0; /* Tailwind gray-300 */
+            overscroll-behavior: none;
+        }
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .btn {
+            @apply px-6 py-3 rounded-lg font-semibold shadow-md transition-all duration-300 ease-in-out flex items-center justify-center;
+        }
+        .btn-primary { @apply bg-sky-500 hover:bg-sky-600 text-white; }
+        .btn-secondary { @apply bg-slate-600 hover:bg-slate-700 text-white; }
+        .btn-success { @apply bg-green-500 hover:bg-green-600 text-white; }
+        .btn-danger { @apply bg-red-500 hover:bg-red-600 text-white; }
+        .btn-ai { @apply bg-purple-600 hover:bg-purple-700 text-white; }
+        .btn-warning { @apply bg-amber-500 hover:bg-amber-600 text-white; }
+
+        .option-btn { @apply w-full text-left p-4 my-2 rounded-lg border border-slate-600 hover:bg-slate-700 transition-colors duration-200; }
+        .option-btn.selected { @apply ring-2 ring-sky-400; }
+        .option-btn.correct { @apply bg-green-700 border-green-500 text-white; }
+        .option-btn.incorrect { @apply bg-red-700 border-red-500 text-white; }
+
+        .wps-content::-webkit-scrollbar, .modal-scrollable-content::-webkit-scrollbar, .leaderboard-content::-webkit-scrollbar, .generation-log::-webkit-scrollbar {
+            width: 8px;
+        }
+        .wps-content::-webkit-scrollbar-track, .modal-scrollable-content::-webkit-scrollbar-track, .leaderboard-content::-webkit-scrollbar-track, .generation-log::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1); border-radius: 10px;
+        }
+        .wps-content::-webkit-scrollbar-thumb, .modal-scrollable-content::-webkit-scrollbar-thumb, .leaderboard-content::-webkit-scrollbar-thumb, .generation-log::-webkit-scrollbar-thumb {
+            background: #38bdf8; border-radius: 10px;
+        }
+        .wps-content::-webkit-scrollbar-thumb:hover, .modal-scrollable-content::-webkit-scrollbar-thumb:hover, .leaderboard-content::-webkit-scrollbar-thumb:hover, .generation-log::-webkit-scrollbar-thumb:hover {
+            background: #0ea5e9;
         }
 
-        .intro-container {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background-color: #005cbf;
-          color: white;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          animation: fadeOut 2s ease-out 3s forwards;
-          z-index: 1000;
+        .screen { display: none; animation: fadeIn 0.5s ease-in-out; }
+        .screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        #timer-display { font-size: 1.5em; font-weight: 700; color: #60a5fa; }
+        .progress-bar-container { width: 100%; background-color: #374151; border-radius: 0.5rem; overflow: hidden; height: 10px; }
+        .progress-bar-fill { height: 100%; background-color: #38bdf8; transition: width 0.5s ease-in-out; border-radius: 0.5rem; }
+
+        .modal { @apply fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50; animation: fadeInModal 0.3s ease-out; }
+        .modal-content { @apply glassmorphism p-6 md:p-8 rounded-xl shadow-2xl w-full max-w-lg text-slate-100; animation: scaleInModal 0.3s ease-out; }
+        .modal-scrollable-content { max-height: 60vh; overflow-y: auto; padding-right: 10px; }
+        @keyframes fadeInModal { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleInModal { from { transform: scale(0.95); opacity: 0.8; } to { transform: scale(1); opacity: 1; } }
+
+        .timer-low { animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { color: #ef4444; } 50% { color: #f87171; } }
+        .spinner { width: 20px; height: 20px; border: 3px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; margin-right: 8px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        input[type="text"], input[type="password"], select {
+             @apply bg-slate-700 border border-slate-600 text-white placeholder-slate-400 text-sm rounded-lg focus:ring-sky-500 focus:border-sky-500 block w-full p-2.5;
         }
-
-        .intro-title {
-          font-size: 2rem;
-          font-weight: bold;
-          letter-spacing: 2px;
-          animation: zoomIn 2s ease-out 1s forwards;
-          opacity: 0;
-          transform: scale(0.5);
+        .form-field-container {
+            @apply mb-4 w-full md:w-2/3 mx-auto; 
         }
-
-        .intro-subtitle {
-          font-size: 1rem;
-          margin-top: 10px;
-          opacity: 0;
-          animation: slideUp 1s ease-out 2s forwards;
-          transform: translateY(30px);
+        .generation-log {
+            @apply bg-slate-800 p-3 rounded-md text-xs text-slate-300 max-h-40 overflow-y-auto mt-4;
         }
-
-        @keyframes fadeOut {
-          100% {
-            opacity: 0;
-            visibility: hidden;
-            z-index: -1;
-          }
-        }
-
-        @keyframes zoomIn {
-          100% {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-
-        @keyframes slideUp {
-          100% {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        header {
-          background-color: #010d18;
-          color: #fff;
-          padding: 10px;
-          width: 100%;
-          text-align: center;
-          margin-bottom: 10px;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-          border-radius: 6px;
-        }
-
-        section {
-          background-color: #fff;
-          width: 95%;
-          border-radius: 6px;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-          padding: 15px;
-          margin-bottom: 10px;
-        }
-
-        form {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-          margin-top: 5px;
-        }
-
-        label {
-          font-weight: bold;
-          margin-bottom: 3px;
-          font-size: 0.9rem;
-        }
-
-        input[type='text'],
-        input[type='number'],
-        select {
-          padding: 8px;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          font-size: 1rem;
-          width: calc(100% - 16px);
-          max-width: 100%;
-        }
-
-        input[type='submit'],
-        button {
-          background-color: #005cbf;
-          color: white;
-          padding: 8px 12px;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-          transition: background-color 0.3s ease;
-          font-size: 1rem;
-          max-width: 100%;
-          align-self: flex-start;
-        }
-
-        input[type='submit']:hover,
-        button:hover {
-          background-color: #0041a5;
-        }
-
-        .button-feedback {
-          background-color: #007bff;
-          transition: background-color 0.1s ease;
-        }
-
-        .color-picker {
-          padding: 0;
-          border: none;
-          cursor: pointer;
-          width: 30px;
-          height: 30px;
-        }
-
-        .led-container {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 5px;
-        }
-
-        .led-container div {
-          margin-bottom: 10px;
-        }
-
-        .flex-container {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 10px;
-          justify-content: space-between;
-        }
-
-        a {
-          color: #005cbf;
-          text-decoration: none;
-          font-size: 1rem;
-        }
-
-        a:hover {
-          text-decoration: underline;
-        }
-
-        @media (max-width: 600px) {
-          body {
-            padding: 5px;
-            padding-bottom: 100px;
-          }
-
-          header {
-            margin-bottom: 10px;
-          }
-
-          section {
-            padding: 10px;
-            margin-bottom: 10px;
-          }
-
-          .led-container {
-            grid-template-columns: 1fr;
-          }
-
-          nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background-color: #f8f9fa;
-            box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
-            z-index: 100;
-          }
-
-          nav button {
-            flex: 1;
-            padding: 8px 10px;
-            border: none;
-            border-top: 1px solid #dee2e6;
-            background-color: #ffffff;
-            color: #495057;
-            cursor: pointer;
-            margin: 0;
-            font-size: 0.85rem;
-          }
-
-          nav button:hover {
-            background-color: #e9ecef;
-          }
-
-        .gauge-container {
-            width: 280px;
-            height: 280px;
-            position: relative;
-            margin: 20px auto;
-            background: linear-gradient(145deg, #f3f4f6, #ffffff);
-            border-radius: 50%;
-            box-shadow: 
-                8px 8px 16px rgba(0, 0, 0, 0.1),
-                -8px -8px 16px rgba(255, 255, 255, 0.8);
-            padding: 20px;
-        }
-
-        #rpmGauge {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        .gauge-value {
-            position: absolute;
-            bottom: 35%;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: #2563eb;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .gauge-label {
-            position: absolute;
-            bottom: 25%;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 1rem;
-            color: #6b7280;
-        }
-
-        .gauge-ticks {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-        }
-
-        @media (max-width: 600px) {
-            .gauge-container {
-                width: 220px;
-                height: 220px;
-                padding: 15px;
-            }
-
-            .gauge-value {
-                font-size: 2rem;
-            }
-
-            .gauge-label {
-                font-size: 0.9rem;
-            }
-        }
-
-        nav {
-          display: flex;
-          width: 100%;
-          position: fixed;
-          bottom: 0;
-          left: 0;
-          z-index: 100;
-        }
-
-        nav button {
-          flex: 1;
-          padding: 10px 15px;
-          border: 1px solid #052de2;
-          background-color: #0b13ee;
-          color: white;
-          cursor: pointer;
-          margin: 0;
-        }
-
-        nav button:hover {
-          background-color: #e0e0e0;
-        }
-
-        .hidden {
-          display: none;
-        }
-
-        .side-panel {
-            height: 100%;
-            width: 0;
-            position: fixed;
-            z-index: 1;
-            top: 0;
-            left: 0;
-            background-color: #f8f9fa;
-            overflow-x: hidden;
-            transition: 0.5s;
-            padding-top: 60px;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.2);
-        }
-
-        .side-panel button {
-            padding: 10px 15px;
-            text-align: left;
-            border: none;
-            background: none;
-            display: block;
-            width: 100%;
-            cursor: pointer;
-            color: #333;
-        }
-
-        .side-panel button:hover {
-            background-color: #e9ecef;
-        }
-
-        .nav-button {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            font-size: 2rem;
-            cursor: pointer;
-            background: none;
-            border: none;
-            z-index: 2;
-        }
-
-        .side-panel.open {
-            width: 250px;
-        }
-    }
     </style>
 </head>
-<body>
-    <div id="sidePanel" class="side-panel">
-        <button onclick="showSection('gauge')">Gauge</button>
-        <button onclick="showSection('rpmConfig')">RPM Config</button>
-        <button onclick="showSection('ledConfig')">LED Configuration</button>
-        <button onclick="showSection('flashConfig')">Flash Config</button>
-        <button onclick="showSection('mil')">MIL</button>
-        <button onclick="showSection('settings')">Settings</button>
-        <button id="nightModeToggle">Night Mode</button>
-        <div id="connectionStatus" style="padding: 10px; text-align: center;"></div>
-    </div>
-    <button id="navButton" class="nav-button">☰</button>
-    <style>
-        body.dark-mode {
-            background-color: #1a1a1a;
-            color: #f0f0f0;
-        }
-        body.dark-mode header {
-            background-color: #2a2a2a;
-            color: #f0f0f0;
-        }
-        body.dark-mode section {
-            background-color: #2a2a2a;
-            color: #f0f0f0;
-        }
-        body.dark-mode input[type='text'],
-        body.dark-mode input[type='number'],
-        body.dark-mode select {
-            background-color: #3a3a3a;
-            color: #f0f0f0;
-            border-color: #555;
-        }
-        body.dark-mode input[type='submit'],
-        body.dark-mode button {
-            background-color: #3a3a3a;
-            color: #f0f0f0;
-        }
-        body.dark-mode input[type='submit']:hover,
-        body.dark-mode button:hover {
-            background-color: #4a4a4a;
-        }
-        body.dark-mode a {
-            color: #66a3ff;
-        }
-        body.dark-mode a:hover {
-            color: #80b3ff;
-        }
-        body {
-            overflow-y: hidden;
-        }
-    </style>
-    <script>
-        const nightModeToggle = document.getElementById('nightModeToggle');
-        const body = document.body;
-        const savedTheme = localStorage.getItem('theme');
-        const connectionStatus = document.getElementById('connectionStatus');
-        let connectionInterval;
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
 
-        if (savedTheme === 'dark') {
-            body.classList.add('dark-mode');
-        }
+    <div id="app-container" class="w-full max-w-4xl glassmorphism rounded-xl shadow-2xl p-6 md:p-8">
 
-        nightModeToggle.addEventListener('click', () => {
-            body.classList.toggle('dark-mode');
-            const theme = body.classList.contains('dark-mode') ? 'dark' : 'light';
-            localStorage.setItem('theme', theme);
-        });
-
-        async function fetchConfig() {
-            try {
-                const response = await fetch('http://192.168.4.1/GetConfig');
-                const data = await response.json();
+        <div id="main-menu-screen" class="screen active">
+            <div class="text-center">
+                <h1 class="text-4xl font-bold text-sky-400 mb-2">CSWIP 3.1</h1>
+                <h2 class="text-2xl font-semibold mb-6 text-slate-300">Advanced Mock Exam ✨</h2>
                 
-                for (let i = 0; i < 8; i++) {
-                    document.querySelector(`input[name="led${i}"]`).value = '#' + data.ledColors[i];
-                    document.querySelector(`input[name="rpm${i}"]`).value = data.rpmThresholds[i];
-                }
-                document.getElementById('flashColor').value = '#' + data.flashColor;
-                document.getElementById('flashSpeed').value = data.flashSpeed;
-                document.getElementById('flashThreshold').value = data.flashThreshold;
-            } catch (error) {
-                console.error('Error fetching config:', error);
-            }
-        }
+                <div class="form-field-container">
+                    <label for="user-name-input" class="block text-sm font-medium mb-1 text-slate-300 text-left">Your Name:</label>
+                    <input type="text" id="user-name-input" placeholder="Enter your name for the leaderboard">
+                </div>
 
-        async function checkConnection() {
-            try {
-                const response = await fetch('http://192.168.4.1/', { method: 'HEAD', mode: 'no-cors' });
-                if (response.ok) {
-                    connectionStatus.textContent = 'ESP32: Connected';
-                    connectionStatus.style.color = 'green';
-                    clearInterval(connectionInterval);
-                } else {
-                    connectionStatus.textContent = 'ESP32: Not Connected';
-                    connectionStatus.style.color = 'red';
-                }
-            } catch (error) {
-                connectionStatus.textContent = 'ESP32: Not Connected';
-                connectionStatus.style.color = 'red';
-            }
-        }
+                <div class="form-field-container">
+                    <label for="api-key-input" class="block text-sm font-medium mb-1 text-slate-300 text-left">Gemini API Key (For AI Question Generation):</label>
+                    <input type="password" id="api-key-input" placeholder="Enter your Gemini API Key">
+                    <div class="text-right">
+                         <button id="save-api-key-btn" class="btn btn-secondary btn-sm py-1 px-3 mt-2 text-xs inline-block">Save Key</button>
+                    </div>
+                </div>
+                
+                <div class="form-field-container mb-8"> 
+                    <label for="difficulty-select" class="block text-sm font-medium mb-1 text-slate-300 text-left">Select Difficulty:</label>
+                    <select id="difficulty-select">
+                        <option value="easy">Easy</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="hard">Hard</option>
+                    </select>
+                </div>
 
-        function startConnectionCheck() {
-            connectionInterval = setInterval(checkConnection, 5000);
-        }
-
-        document.addEventListener('DOMContentLoaded', async function() {
-            await fetchConfig();
-            await checkConnection();
-            if (connectionStatus.textContent !== 'ESP32: Connected') {
-                startConnectionCheck();
-            }
-        });
-
-        document.getElementById('connectionStatus').addEventListener('click', async () => {
-            await checkConnection();
-            if (connectionStatus.textContent !== 'ESP32: Connected') {
-                startConnectionCheck();
-            }
-        });
-    </script>
-
-    <section id="gauge">
-        <h2>Current RPM</h2>
-        <div class="gauge-container">
-            <canvas id="rpmGauge" width="280" height="280"></canvas>
-            <div class="gauge-value" id="realTimeRPM">0</div>
-        <div class="gauge-label">RPM</div>
+                <button id="start-exam-btn" class="btn btn-primary w-full md:w-2/3 mx-auto mb-3 text-lg">Start New Exam</button>
+                <button id="load-progress-menu-btn" class="btn btn-secondary w-full md:w-2/3 mx-auto mb-3 text-lg">Load Saved Progress</button>
+                <button id="load-results-btn" class="btn btn-secondary w-full md:w-2/3 mx-auto mb-3 text-lg">View Past Results</button>
+                <button id="leaderboard-btn" class="btn btn-warning w-full md:w-2/3 mx-auto mb-3 text-lg">View Leaderboard</button>
+                <p class="text-xs text-slate-500 mt-4">CSWIP® is a registered trademark of TWI Certification Ltd. AI features powered by Gemini. Data stored in Google Sheets.</p>
+            </div>
         </div>
-        <script>
-         function drawGauge(rpm) {
-            const canvas = document.getElementById('rpmGauge');
-            const ctx = canvas.getContext('2d');
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const radius = Math.min(centerX, centerY) - 20;
+        
+        <div id="question-generation-screen" class="screen">
+            <div class="text-center w-full">
+                <h2 id="generation-title" class="text-3xl font-bold text-sky-400 mb-6">Preparing Your Exam...</h2>
+                <div class="spinner mx-auto my-4 w-12 h-12 border-4"></div>
+                <p id="generation-status" class="text-xl mb-4 text-slate-300">Initializing...</p>
+                <div id="generation-log-area" class="generation-log">
+                    </div>
+                 <button id="cancel-generation-btn" class="btn btn-danger w-full sm:w-auto mt-6">Cancel Generation</button>
+            </div>
+        </div>
 
-            // Clear canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        <div id="intermediate-screen" class="screen">
+             <div class="text-center w-full">
+                <h2 id="intermediate-title" class="text-3xl font-bold text-sky-400 mb-6">Part 1 Completed!</h2>
+                <p id="intermediate-message" class="text-xl mb-4"></p>
+                <p class="text-slate-300 mb-6">Ready for Part 2: WPS Questions?</p>
+                <button id="proceed-to-part2-btn" class="btn btn-primary w-full sm:w-auto">
+                    <span class="btn-text">Proceed to Part 2</span>
+                    <div class="spinner hidden"></div> </button>
+                 <button id="intermediate-back-to-menu-btn" class="btn btn-secondary w-full sm:w-auto mt-3">Back to Menu (Progress Saved)</button>
+            </div>
+        </div>
 
-            // Draw background arc
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, radius, Math.PI * 0.75, Math.PI * 2.25, false);
-            ctx.lineWidth = 20;
-            ctx.strokeStyle = '#e5e7eb';
-            ctx.stroke();
 
-            // Calculate progress
-            const progress = rpm / 7000;
-            const endAngle = (Math.PI * 0.75) + (Math.PI * 1.5 * progress);
+        <div id="exam-screen" class="screen w-full">
+            <div class="w-full">
+                 <h2 id="exam-part-title" class="text-2xl font-bold text-sky-400 mb-3 text-center">Part 1: General Knowledge</h2>
+                <div class="flex justify-between items-center mb-4">
+                    <div id="timer-display" class="text-2xl font-bold text-sky-400">80:00</div>
+                    <div id="question-counter" class="text-lg text-slate-400">Question 1/80</div>
+                </div>
+                <div class="progress-bar-container mb-6">
+                    <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%;"></div>
+                </div>
 
-            // Create gradient for progress arc
-            const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
-            gradient.addColorStop(0, '#3b82f6');
-            gradient.addColorStop(1, '#2563eb');
-
-            // Draw progress arc
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, radius, Math.PI * 0.75, endAngle, false);
-            ctx.lineWidth = 20;
-            ctx.strokeStyle = gradient;
-            ctx.lineCap = 'round';
-            ctx.stroke();
-
-            // Draw ticks
-            for (let i = 0; i <= 14; i++) {
-                const angle = (Math.PI * 0.75) + (Math.PI * 1.5 * (i / 14));
-                const tickLength = i % 2 === 0 ? 15 : 10;
+                <div id="exam-content-area" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div id="question-details-area" class="md:col-span-1">
+                        <h3 class="text-xl font-semibold mb-1 text-sky-300">Question:</h3>
+                        <p id="question-text" class="text-lg mb-6 min-h-[60px] text-slate-200"></p>
+                        <div id="options-area"></div>
+                         <div id="wps-snippet-area" class="mt-4 p-3 bg-slate-700 rounded-lg hidden">
+                            <h5 class="text-sm font-semibold text-sky-300 mb-1">Relevant WPS Information/Scenario:</h5>
+                            <p id="wps-snippet-text" class="text-xs text-slate-300 whitespace-pre-wrap"></p>
+                        </div>
+                    </div>
+                    <div id="wps-display-area" class="md:col-span-1 hidden p-4 bg-slate-800 rounded-lg max-h-[400px] md:max-h-[500px] overflow-y-auto wps-content">
+                        </div>
+                </div>
                 
-                const startX = centerX + (radius - 25) * Math.cos(angle);
-                const startY = centerY + (radius - 25) * Math.sin(angle);
-                const endX = centerX + (radius - 25 - tickLength) * Math.cos(angle);
-                const endY = centerY + (radius - 25 - tickLength) * Math.sin(angle);
-
-                ctx.beginPath();
-                ctx.moveTo(startX, startY);
-                ctx.lineTo(endX, endY);
-                ctx.lineWidth = i % 2 === 0 ? 3 : 2;
-                ctx.strokeStyle = '#9ca3af';
-                ctx.stroke();
-
-                // Add numbers for major ticks
-                if (i % 2 === 0) {
-                    const value = Math.round((i / 14) * 7000);
-                    const textX = centerX + (radius - 45) * Math.cos(angle);
-                    const textY = centerY + (radius - 45) * Math.sin(angle);
-
-                    ctx.save();
-                    ctx.translate(textX, textY);
-                    ctx.rotate(angle + Math.PI / 2);
-                    ctx.font = '12px Arial';
-                    ctx.fillStyle = '#4b5563';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText(value, 0, 0);
-                    ctx.restore();
-                }
-            }
-
-            // Update digital display
-            document.getElementById('realTimeRPM').textContent = Math.round(rpm);
-        }
-        </script>
-        <button id="testRPM">Test RPM</button>
-        <script>
-            document.getElementById('testRPM').addEventListener('click', async () => {
-                let currentRPM = 0;
-                const maxRPM = 7000;
-                const increment = 100;
-                const delay = 350;
-
-                function simulateRPMIncrease() {
-                    if (currentRPM <= maxRPM) {
-
-                        fetch('http://192.168.4.1/UpdateRPM?value=' + currentRPM);
-                        currentRPM += increment;
-                        setTimeout(simulateRPMIncrease, 350);
-                    } else {
-                        simulateRPMDecrease();
-                    }
-                }
-
-                function simulateRPMDecrease() {
-                    if (currentRPM >= 0) {
-
-                        fetch('http://192.168.4.1/UpdateRPM?value=' + currentRPM);
-                        currentRPM -= increment;
-                        setTimeout(simulateRPMDecrease, 350);
-                    }
-                }
-
-                simulateRPMIncrease();
-            });
-        </script>
-    </section>
-
-    <section id="rpmConfig" class="hidden">
-        <h2>RPM Interval & Control</h2>
-        <form id="intervalForm">
-            <label for="RPMInterval">RPM Request Interval (ms):</label>
-            <input type="number" id="RPMInterval" name="RPMInterval" min="100" value="350">
-            <button type="submit">Update Interval</button>
-        </form>
-        <h2>RPM Request Control</h2>
-        <button id="StartRPMRequests">Start RPM Requests</button>
-        <button id="StopRPMRequests">Stop RPM Requests</button>
-    </section>
-
-    <section id="ledConfig" class="hidden">
-        <h2>LED Configuration</h2>
-        <form id="ledForm">
-            <div class="led-container">
-                <div>
-                    <label for="led0">LED 1 Color:</label>
-                    <input type="color" class="color-picker" name="led0" value="#00FF00">
-                    <label for="rpm0">Threshold:</label>
-                    <input type="number" name="rpm0" min="0" max="7000" value="1300">
+                <div id="feedback-area" class="mt-6 p-4 rounded-lg min-h-[80px] hidden">
+                    <p id="feedback-text" class="text-md mb-2"></p>
+                    <button id="explain-deeper-btn" class="btn btn-ai text-sm py-2 px-4 hidden">
+                        <span class="btn-text">✨ Explain Deeper</span>
+                        <div class="spinner hidden"></div>
+                    </button>
                 </div>
-                <div>
-                    <label for="led1">LED 2 Color:</label>
-                    <input type="color" class="color-picker" name="led1" value="#00FF00">
-                    <label for="rpm1">Threshold:</label>
-                    <input type="number" name="rpm1" min="0" max="7000" value="1700">
-                </div>
-                <div>
-                    <label for="led2">LED 3 Color:</label>
-                    <input type="color" class="color-picker" name="led2" value="#FFFF00">
-                    <label for="rpm2">Threshold:</label>
-                    <input type="number" name="rpm2" min="0" max="7000" value="2200">
-                </div>
-                <div>
-                    <label for="led3">LED 4 Color:</label>
-                    <input type="color" class="color-picker" name="led3" value="#FFFF00">
-                    <label for="rpm3">Threshold:</label>
-                    <input type="number" name="rpm3" min="0" max="7000" value="2500">
-                </div>
-                <div>
-                    <label for="led4">LED 5 Color:</label>
-                    <input type="color" class="color-picker" name="led4" value="#800080">
-                    <label for="rpm4">Threshold:</label>
-                    <input type="number" name="rpm4" min="0" max="7000" value="2900">
-                </div>
-                <div>
-                    <label for="led5">LED 6 Color:</label>
-                    <input type="color" class="color-picker" name="led5" value="#800080">
-                    <label for="rpm5">Threshold:</label>
-                    <input type="number" name="rpm5" min="0" max="7000" value="3300">
-                </div>
-                <div>
-                    <label for="led6">LED 7 Color:</label>
-                    <input type="color" class="color-picker" name="led6" value="#FF0000">
-                    <label for="rpm6">Threshold:</label>
-                    <input type="number" name="rpm6" min="0" max="7000" value="3700">
-                </div>
-                <div>
-                    <label for="led7">LED 8 Color:</label>
-                    <input type="color" class="color-picker" name="led7" value="#FF0000">
-                    <label for="rpm7">Threshold:</label>
-                    <input type="number" name="rpm7" min="0" max="7000" value="4000">
+
+                <div class="mt-8 flex flex-col sm:flex-row justify-between items-center">
+                    <button id="save-progress-btn" class="btn btn-secondary mb-4 sm:mb-0 w-full sm:w-auto">Save Progress</button>
+                    <button id="next-question-btn" class="btn btn-primary hidden w-full sm:w-auto">Next Question</button>
+                    <button id="finish-part-btn" class="btn btn-success hidden w-full sm:w-auto">Finish Part</button>
                 </div>
             </div>
-            <button type="submit">Update LED Colors</button>
-        </form>
-    </section>
-
-    <section id="flashConfig" class="hidden">
-        <h2>LED Flashing Config</h2>
-        <form id="flashForm">
-            <label for="flashColor">Flash Color:</label>
-            <input type="color" id="flashColor" name="flashColor" value="#800080">
-            <label for="flashSpeed">Flash Speed (ms):</label>
-            <input type="number" id="flashSpeed" name="flashSpeed" min="100" value="500">
-            <label for="flashThreshold">RPM Threshold:</label>
-            <input type="number" id="flashThreshold" name="flashThreshold" min="0" max="7000" value="4500">
-            <button type="submit">Update Flash Settings</button>
-        </form>
-    </section>
-
-    <section id="mil" class="hidden">
-        <h2>MIL Section</h2>
-        <div class="controls">
-            <button id="getMILCodes">Fetch MIL Codes</button>
-            <button id="clearMILCodes">Clear MIL Codes</button>
         </div>
-        <div id="milCodesContainer"></div>
-    </section>
 
-    <section id="settings" class="hidden">
-        <h3>OBD2 Configuration</h3>
-        <form id="obdForm">
-            <label for="obdName">OBD-II Name:</label>
-            <input type="text" name="obdName" required>
-            <label for="obdPassword">OBD-II PIN Code:</label>
-            <input type="text" name="obdPassword" required>
-            <button type="submit">Apply and Connect</button>
-        </form>
-    </section>
+        <div id="results-screen" class="screen">
+            <div class="text-center w-full">
+                <h2 class="text-3xl font-bold text-sky-400 mb-2">Exam Results</h2>
+                <p id="results-user-name" class="text-lg text-slate-300 mb-4"></p>
+                <p id="score-display-part1" class="text-xl mb-1"></p>
+                <p id="score-display-part2" class="text-xl mb-1"></p>
+                <p id="score-display-total" class="text-2xl font-semibold mb-4"></p>
+                <p id="pass-fail-message" class="text-xl mb-6"></p>
+                
+                <div id="wrong-answers-summary" class="mt-6 text-left max-h-[250px] overflow-y-auto p-4 bg-slate-800 rounded-lg wps-content">
+                    <h4 class="text-xl font-semibold text-rose-400 mb-3">Review Incorrect Answers:</h4>
+                </div>
+
+                <div class="mt-8 flex flex-col sm:flex-row justify-center gap-4">
+                    <button id="generate-study-tips-btn" class="btn btn-ai w-full sm:w-auto">
+                         <span class="btn-text">✨ Get Study Tips</span>
+                         <div class="spinner hidden"></div>
+                    </button>
+                    <button id="save-results-to-device-btn" class="btn btn-success w-full sm:w-auto">Save Results to Device (Local)</button>
+                    <button id="back-to-menu-btn" class="btn btn-primary w-full sm:w-auto">Back to Menu</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="leaderboard-screen" class="screen">
+            <div class="text-center w-full">
+                <h2 class="text-3xl font-bold text-sky-400 mb-6">Leaderboard (from Google Sheet)</h2>
+                <div id="leaderboard-content-area" class="max-h-[400px] overflow-y-auto leaderboard-content bg-slate-800 p-4 rounded-lg">
+                    </div>
+                <button id="leaderboard-back-to-menu-btn" class="btn btn-primary w-full sm:w-auto mt-6">Back to Menu</button>
+            </div>
+        </div>
+
+        <div id="message-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3 id="modal-title" class="text-xl font-semibold mb-4 text-sky-300">Notification</h3>
+                <div id="modal-message-content" class="modal-scrollable-content">
+                    <p id="modal-message" class="mb-6 text-slate-200 whitespace-pre-wrap"></p>
+                </div>
+                <button id="modal-ok-btn" class="btn btn-primary w-full mt-4">OK</button>
+            </div>
+        </div>
+    </div>
 
     <script>
-        function showSection(sectionId) {
-            console.log(`Showing section: ${sectionId}`);
-            const sections = document.querySelectorAll('section');
-            sections.forEach(section => {
-                section.classList.add('hidden');
-            });
-            document.getElementById(sectionId).classList.remove('hidden');
-            const navButtons = document.querySelectorAll('nav button');
-            navButtons.forEach(button => {
-                button.classList.remove('active');
-            });
-            const activeButton = document.querySelector(`nav button[onclick*="${sectionId}"]`);
-            if (activeButton) {
-                activeButton.classList.add('active');
-                setTimeout(() => {
-                    activeButton.classList.remove('active');
-                }, 200);
+        // --- APPLICATION STATE ---
+        const appState = {
+            currentScreen: 'main-menu-screen',
+            userName: localStorage.getItem('cswipUserName') || '',
+            geminiApiKey: localStorage.getItem('cswipGeminiApiKey') || '',
+            // Hardcoded Apps Script URL as requested
+            appsScriptUrl: "https://script.google.com/macros/s/AKfycbyi6Pcs4jdrFFO4x_Bq7jx2wKsB1UAC5mMjvVsDgEMpswF9Gv2FGPRyxtzGipcZcX15ng/exec", 
+            selectedDifficulty: 'medium',
+            
+            currentPart: 1, 
+            examConstants: { 
+                part1: { name: "General Knowledge", numQuestions: 80, durationMinutes: 80, section: "general" },
+                part2: { name: "WPS Questions (AI)", numQuestions: 40, durationMinutes: 40, section: "wps" }
+            },
+
+            part1Questions: [],
+            part2Questions: [], 
+            
+            currentQuestionIndex: 0, 
+            
+            part1UserAnswers: [],
+            part2UserAnswers: [],
+            
+            part1Score: 0,
+            part2Score: 0,
+            
+            timeLeft: 0, 
+            timerInterval: null,
+            examInProgress: false,
+            passMarkPercentage: 70,
+            isGeneratingQuestions: false, 
+        };
+
+        // --- DOM ELEMENTS ---
+        const screens = {
+            mainMenu: document.getElementById('main-menu-screen'),
+            questionGeneration: document.getElementById('question-generation-screen'),
+            intermediate: document.getElementById('intermediate-screen'),
+            exam: document.getElementById('exam-screen'),
+            results: document.getElementById('results-screen'),
+            leaderboard: document.getElementById('leaderboard-screen'),
+        };
+        const userNameInput = document.getElementById('user-name-input');
+        const apiKeyInput = document.getElementById('api-key-input');
+        const saveApiKeyBtn = document.getElementById('save-api-key-btn');
+        const difficultySelect = document.getElementById('difficulty-select');
+        const startExamBtn = document.getElementById('start-exam-btn');
+        const loadProgressMenuBtn = document.getElementById('load-progress-menu-btn');
+        const loadResultsBtn = document.getElementById('load-results-btn');
+        const leaderboardBtn = document.getElementById('leaderboard-btn');
+
+        const generationTitleEl = document.getElementById('generation-title');
+        const generationStatusEl = document.getElementById('generation-status');
+        const generationLogAreaEl = document.getElementById('generation-log-area');
+        const cancelGenerationBtn = document.getElementById('cancel-generation-btn');
+
+        const intermediateTitle = document.getElementById('intermediate-title');
+        const intermediateMessage = document.getElementById('intermediate-message');
+        const proceedToPart2Btn = document.getElementById('proceed-to-part2-btn');
+        const intermediateBackToMenuBtn = document.getElementById('intermediate-back-to-menu-btn');
+        
+        const examPartTitle = document.getElementById('exam-part-title');
+        const timerDisplay = document.getElementById('timer-display');
+        const questionCounter = document.getElementById('question-counter');
+        const progressBarFill = document.getElementById('progress-bar-fill');
+        const questionTextEl = document.getElementById('question-text');
+        const optionsArea = document.getElementById('options-area');
+        const wpsSnippetArea = document.getElementById('wps-snippet-area');
+        const wpsSnippetText = document.getElementById('wps-snippet-text');
+        const questionDetailsArea = document.getElementById('question-details-area');
+        
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackTextEl = document.getElementById('feedback-text');
+        const explainDeeperBtn = document.getElementById('explain-deeper-btn');
+        
+        const nextQuestionBtn = document.getElementById('next-question-btn');
+        const finishPartBtn = document.getElementById('finish-part-btn'); 
+        const saveProgressBtn = document.getElementById('save-progress-btn');
+        
+        const resultsUserNameEl = document.getElementById('results-user-name');
+        const scoreDisplayPart1El = document.getElementById('score-display-part1');
+        const scoreDisplayPart2El = document.getElementById('score-display-part2');
+        const scoreDisplayTotalEl = document.getElementById('score-display-total');
+        const passFailMessageEl = document.getElementById('pass-fail-message');
+        const wrongAnswersSummaryEl = document.getElementById('wrong-answers-summary');
+        const generateStudyTipsBtn = document.getElementById('generate-study-tips-btn');
+        const saveResultsToDeviceBtn = document.getElementById('save-results-to-device-btn');
+        const backToMenuBtn = document.getElementById('back-to-menu-btn');
+
+        const leaderboardContentArea = document.getElementById('leaderboard-content-area');
+        const leaderboardBackToMenuBtn = document.getElementById('leaderboard-back-to-menu-btn');
+
+        const messageModal = document.getElementById('message-modal');
+        const modalTitleEl = document.getElementById('modal-title');
+        const modalMessageEl = document.getElementById('modal-message');
+        
+        // --- UI FUNCTIONS ---
+        function showScreen(screenId) {
+            Object.values(screens).forEach(screen => screen.classList.remove('active'));
+            if (screens[screenId]) {
+                 screens[screenId].classList.add('active');
+            } else {
+                console.error(`Screen with id "${screenId}" not found.`);
+                screens.mainMenu.classList.add('active'); 
+            }
+            appState.currentScreen = screenId;
+        }
+
+        function showMessageModal(title, message, onOK = () => {}, isHtml = false) {
+            modalTitleEl.textContent = title;
+            if (isHtml) {
+                modalMessageEl.innerHTML = message;
+            } else {
+                modalMessageEl.textContent = message;
+            }
+            messageModal.classList.remove('hidden');
+            messageModal.classList.add('flex');
+            
+            const currentModalOkBtn = document.getElementById('modal-ok-btn');
+            if (currentModalOkBtn) {
+                const newOkBtn = currentModalOkBtn.cloneNode(true);
+                newOkBtn.textContent = "OK"; 
+                currentModalOkBtn.parentNode.replaceChild(newOkBtn, currentModalOkBtn); 
+                newOkBtn.onclick = () => { 
+                    messageModal.classList.add('hidden');
+                    messageModal.classList.remove('flex');
+                    onOK();
+                };
+            } else {
+                console.error("Modal OK button ('modal-ok-btn') not found in the DOM.");
             }
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOMContentLoaded event triggered.');
-            const introContainer = document.createElement('div');
-            introContainer.classList.add('intro-container');
-            introContainer.innerHTML = `
-                <h1 class="intro-title">Welcome!</h1>
-                <p class="intro-subtitle">Starting up...</p>
-            `;
-            document.body.appendChild(introContainer);
+        function addLogToGenerationScreen(message) {
+            const logEntry = document.createElement('p');
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            generationLogAreaEl.appendChild(logEntry);
+            generationLogAreaEl.scrollTop = generationLogAreaEl.scrollHeight; 
+        }
+        
+        // --- EXAM LOGIC ---
+        function initializeExamState() {
+            appState.currentPart = 1;
+            appState.part1Questions = [];
+            appState.part2Questions = [];
+            appState.currentQuestionIndex = 0;
+            appState.part1UserAnswers = [];
+            appState.part2UserAnswers = [];
+            appState.part1Score = 0;
+            appState.part2Score = 0;
+            appState.examInProgress = true;
+            appState.isGeneratingQuestions = false;
+            appState.selectedDifficulty = difficultySelect.value;
+            appState.userName = userNameInput.value.trim() || 'Anonymous';
+            localStorage.setItem('cswipUserName', appState.userName);
+        }
+        
+        async function startExamFlow() {
+            if (!appState.userName || appState.userName.toLowerCase() === 'anonymous') {
+                 showMessageModal("Enter Name", "Please enter your name to start the exam.", () => userNameInput.focus());
+                 return;
+            }
+            if (!getApiKey()) {
+                showMessageModal("API Key Missing", "Gemini API Key is required for AI question generation. Please enter it in the main menu.", () => apiKeyInput.focus());
+                return;
+            }
+            if (!getAppsScriptUrl()) { 
+                showMessageModal("Configuration Error", "Google Apps Script Web App URL is not configured correctly in the application.", () => showScreen('mainMenu'));
+                return;
+            }
 
-            let RPMInterval = 350;
-            let realTimeRPMInterval;
+            initializeExamState();
+            showScreen('questionGeneration');
+            generationLogAreaEl.innerHTML = ''; 
+            addLogToGenerationScreen("Exam preparation started...");
+            appState.isGeneratingQuestions = true;
 
-         function drawGauge(rpm) {
-            const canvas = document.getElementById('rpmGauge');
-            const ctx = canvas.getContext('2d');
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const radius = Math.min(centerX, centerY) - 20;
-
-            // Clear canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Draw background arc
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, radius, Math.PI * 0.75, Math.PI * 2.25, false);
-            ctx.lineWidth = 20;
-            ctx.strokeStyle = '#e5e7eb';
-            ctx.stroke();
-
-            // Calculate progress
-            const progress = rpm / 7000;
-            const endAngle = (Math.PI * 0.75) + (Math.PI * 1.5 * progress);
-
-            // Create gradient for progress arc
-            const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
-            gradient.addColorStop(0, '#3b82f6');
-            gradient.addColorStop(1, '#2563eb');
-
-            // Draw progress arc
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, radius, Math.PI * 0.75, endAngle, false);
-            ctx.lineWidth = 20;
-            ctx.strokeStyle = gradient;
-            ctx.lineCap = 'round';
-            ctx.stroke();
-
-            // Draw ticks
-            for (let i = 0; i <= 14; i++) {
-                const angle = (Math.PI * 0.75) + (Math.PI * 1.5 * (i / 14));
-                const tickLength = i % 2 === 0 ? 15 : 10;
+            try {
+                generationTitleEl.textContent = `Preparing Part 1: ${appState.examConstants.part1.name}`;
+                appState.part1Questions = await ensureQuestionsForPart(appState.examConstants.part1, appState.selectedDifficulty);
+                if (!appState.isGeneratingQuestions) { 
+                    addLogToGenerationScreen("Generation cancelled by user during Part 1 prep.");
+                    showScreen('mainMenu'); return;
+                }
+                if (!appState.part1Questions || appState.part1Questions.length < appState.examConstants.part1.numQuestions) {
+                    throw new Error(`Could not gather enough questions for Part 1 (${appState.part1Questions?.length || 0}/${appState.examConstants.part1.numQuestions}).`);
+                }
+                addLogToGenerationScreen(`Part 1: ${appState.part1Questions.length} questions ready.`);
                 
-                const startX = centerX + (radius - 25) * Math.cos(angle);
-                const startY = centerY + (radius - 25) * Math.sin(angle);
-                const endX = centerX + (radius - 25 - tickLength) * Math.cos(angle);
-                const endY = centerY + (radius - 25 - tickLength) * Math.sin(angle);
+                startCurrentPart();
 
-                ctx.beginPath();
-                ctx.moveTo(startX, startY);
-                ctx.lineTo(endX, endY);
-                ctx.lineWidth = i % 2 === 0 ? 3 : 2;
-                ctx.strokeStyle = '#9ca3af';
-                ctx.stroke();
-
-                // Add numbers for major ticks
-                if (i % 2 === 0) {
-                    const value = Math.round((i / 14) * 7000);
-                    const textX = centerX + (radius - 45) * Math.cos(angle);
-                    const textY = centerY + (radius - 45) * Math.sin(angle);
-
-                    ctx.save();
-                    ctx.translate(textX, textY);
-                    ctx.rotate(angle + Math.PI / 2);
-                    ctx.font = '12px Arial';
-                    ctx.fillStyle = '#4b5563';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText(value, 0, 0);
-                    ctx.restore();
-                }
+            } catch (error) {
+                console.error("Error during exam preparation (Part 1):", error);
+                showMessageModal("Exam Prep Error", `Failed to prepare Part 1: ${error.message}`, () => showScreen('mainMenu'));
+                appState.isGeneratingQuestions = false;
+            }
+        }
+        
+        async function prepareAndStartPart2() {
+            if (!appState.isGeneratingQuestions) { 
+                 showScreen('mainMenu'); return;
+            }
+            showScreen('questionGeneration');
+            generationTitleEl.textContent = `Preparing Part 2: ${appState.examConstants.part2.name}`;
+            addLogToGenerationScreen("Starting preparation for Part 2...");
+            
+            const proceedBtnText = proceedToPart2Btn.querySelector('.btn-text');
+            const proceedSpinner = proceedToPart2Btn.querySelector('.spinner');
+            if (proceedBtnText && proceedSpinner) { 
+                proceedBtnText.textContent = 'Loading Part 2...';
+                proceedSpinner.classList.remove('hidden');
+                proceedToPart2Btn.disabled = true;
             }
 
-            // Update digital display
-            document.getElementById('realTimeRPM').textContent = Math.round(rpm);
+            try {
+                appState.part2Questions = await ensureQuestionsForPart(appState.examConstants.part2, appState.selectedDifficulty);
+                 if (!appState.isGeneratingQuestions) { 
+                    addLogToGenerationScreen("Generation cancelled by user during Part 2 prep.");
+                    showScreen('mainMenu'); return;
+                }
+                if (!appState.part2Questions || appState.part2Questions.length < appState.examConstants.part2.numQuestions) {
+                     throw new Error(`Could not gather enough questions for Part 2 (${appState.part2Questions?.length || 0}/${appState.examConstants.part2.numQuestions}).`);
+                }
+                addLogToGenerationScreen(`Part 2: ${appState.part2Questions.length} questions ready.`);
+                
+                appState.currentPart = 2;
+                appState.currentQuestionIndex = 0;
+                startCurrentPart();
+
+            } catch (error) {
+                console.error("Error during exam preparation (Part 2):", error);
+                showMessageModal("Exam Prep Error", `Failed to prepare Part 2: ${error.message}`, () => showScreen('mainMenu'));
+                appState.isGeneratingQuestions = false;
+            } finally {
+                 if (proceedBtnText && proceedSpinner) { 
+                    proceedBtnText.textContent = 'Proceed to Part 2';
+                    proceedSpinner.classList.add('hidden');
+                    proceedToPart2Btn.disabled = false;
+                }
+            }
         }
 
-            // Form handlers
-            const intervalForm = document.getElementById('intervalForm');
-            intervalForm.addEventListener('submit', async (event) => {
-                event.preventDefault();
-                const formData = new FormData(event.target);
-                const data = {};
-                formData.forEach((value, key) => {
-                    data[key] = value;
-                });
-                try {
-                    const response = await fetch('http://192.168.4.1/UpdateInterval', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data),
-                    });
-                    const responseData = await response.json();
-                    document.getElementById('RPMInterval').value = responseData.RPMInterval;
-                    showToast('Interval updated successfully!');
-                } catch (error) {
-                    console.error('Error updating interval:', error);
-                    showToast('Failed to update interval.', 'error');
+        async function ensureQuestionsForPart(partConfig, difficulty) {
+            generationStatusEl.textContent = `Fetching questions for ${partConfig.name}...`;
+            addLogToGenerationScreen(`Attempting to fetch ${partConfig.numQuestions} ${partConfig.section} questions (Difficulty: ${difficulty}) from Google Sheet.`);
+            
+            let questions = await fetchQuestionsFromGoogleSheet(partConfig.numQuestions, difficulty, partConfig.section);
+            addLogToGenerationScreen(`Found ${questions.length} questions in Google Sheet for ${partConfig.name}.`);
+
+            const needed = partConfig.numQuestions - questions.length;
+            if (needed > 0) {
+                if (!appState.isGeneratingQuestions) return questions; 
+                addLogToGenerationScreen(`Need to generate ${needed} more questions for ${partConfig.name} using AI.`);
+                generationStatusEl.textContent = `Generating ${needed} questions for ${partConfig.name} with AI...`;
+                
+                const newlyGenerated = await generateQuestionsInBatches(needed, difficulty, partConfig.section);
+                 if (!appState.isGeneratingQuestions) return questions; 
+
+                if (newlyGenerated && newlyGenerated.length > 0) {
+                    addLogToGenerationScreen(`AI generated ${newlyGenerated.length} new questions. Saving to Google Sheet...`);
+                    await saveQuestionsToGoogleSheet(newlyGenerated); 
+                    questions = questions.concat(newlyGenerated);
+                    questions = shuffleArray(questions).slice(0, partConfig.numQuestions);
                 }
-            });
-
-            // RPM Controls
-            document.getElementById('StartRPMRequests').addEventListener('click', async () => {
-                realTimeRPMInterval = setInterval(async () => {
-                    try {
-                        const response = await fetch('http://192.168.4.1/GetRealTimeRPM');
-                        const data = await response.json();
-                    } catch (error) {
-                        console.error('Error fetching RPM:', error);
-                    }
-                }, RPMInterval);
-                showToast('RPM monitoring started');
-            });
-
-            document.getElementById('StopRPMRequests').addEventListener('click', () => {
-                clearInterval(realTimeRPMInterval);
-                showToast('RPM monitoring stopped');
-            });
-
-            // LED Configuration
-            const ledForm = document.getElementById('ledForm');
-            ledForm.addEventListener('submit', async (event) => {
-                event.preventDefault();
-                const formData = new FormData(event.target);
-                const data = {};
-                formData.forEach((value, key) => {
-                    data[key] = value;
-                });
-                try {
-                    const response = await fetch('http://192.168.4.1/UpdateLEDColors', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data),
-                    });
-                    const responseData = await response.json();
-                    showToast('LED colors updated successfully!');
-                } catch (error) {
-                    console.error('Error updating LED colors:', error);
-                    showToast('Failed to update LED colors.', 'error');
-                }
-            });
-
-            // Flash Settings
-            document.getElementById('flashForm').addEventListener('submit', async (event) => {
-                event.preventDefault();
-                const formData = new FormData(event.target);
-                const data = {};
-                formData.forEach((value, key) => {
-                    data[key] = value;
-                });
-                try {
-                    const response = await fetch('http://192.168.4.1/UpdateFlashSettings', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data),
-                    });
-                    const responseData = await response.json();
-                    document.getElementById('flashColor').value = responseData.flashColor;
-                    document.getElementById('flashSpeed').value = responseData.flashSpeed;
-                    document.getElementById('flashThreshold').value = responseData.flashThreshold;
-                    showToast('Flash settings updated successfully!');
-                } catch (error) {
-                    console.error('Error updating flash settings:', error);
-                    showToast('Failed to update flash settings.', 'error');
-                }
-            });
-
-            // MIL Codes
-            document.getElementById('getMILCodes').addEventListener('click', async () => {
-                try {
-                    const response = await fetch('http://192.168.4.1/getMILCodes');
-                    const data = await response.json();
-                    displayMILCodes(data.codes);
-                } catch (error) {
-                    console.error('Error fetching MIL codes:', error);
-                    showToast('Failed to fetch MIL codes.', 'error');
-                }
-            });
-
-            document.getElementById('clearMILCodes').addEventListener('click', async () => {
-                try {
-                    await fetch('http://192.168.4.1/clearMILCodes', { method: 'POST' });
-                    showToast('MIL codes cleared successfully!');
-                    document.getElementById('milCodesContainer').innerHTML = '';
-                } catch (error) {
-                    console.error('Error clearing MIL codes:', error);
-                    showToast('Failed to clear MIL codes.', 'error');
-                }
-            });
-
-            function displayMILCodes(codes) {
-                const container = document.getElementById('milCodesContainer');
-                container.innerHTML = '';
-
-                if (!codes || codes.length === 0) {
-                    container.innerHTML = '<p class="text-secondary">No MIL codes found.</p>';
-                    return;
-                }
-
-                const ul = document.createElement('ul');
-                ul.className = 'mil-codes';
-                codes.forEach(code => {
-                    const li = document.createElement('li');
-                    li.textContent = code;
-                    ul.appendChild(li);
-                });
-                container.appendChild(ul);
             }
+            return questions.slice(0, partConfig.numQuestions);
+        }
 
-            // OBD Configuration
-            document.getElementById('obdForm').addEventListener('submit', async (event) => {
-                event.preventDefault();
-                const formData = new FormData(event.target);
-                const data = {};
-                formData.forEach((value, key) => {
-                    data[key] = value;
-                });
-                try {
-                    const response = await fetch('http://192.168.4.1/ConfigureOBD', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data),
-                    });
-                    showToast('OBD2 configuration applied successfully!');
-                } catch (error) {
-                    console.error('Error applying OBD2 configuration:', error);
-                    showToast('Failed to apply OBD2 configuration.', 'error');
+        async function generateQuestionsInBatches(totalNeeded, difficulty, section) {
+            let allNewQuestions = [];
+            const batchSize = 10;
+            const numBatches = Math.ceil(totalNeeded / batchSize);
+            let existingIdsInSession = []; 
+
+            for (let i = 0; i < numBatches; i++) {
+                if (!appState.isGeneratingQuestions) {
+                    addLogToGenerationScreen("Batch generation cancelled by user.");
+                    break; 
                 }
-            });
+                const questionsInThisBatch = Math.min(batchSize, totalNeeded - allNewQuestions.length);
+                if (questionsInThisBatch <= 0) break;
 
-            // RPM Test Animation
-            document.getElementById('testRPM').addEventListener('click', () => {
-                let currentRPM = 0;
-                const maxRPM = 7000;
-                const increment = 100;
-                const delay = 50;
+                generationStatusEl.textContent = `Generating batch ${i + 1} of ${numBatches} for ${section}... (${questionsInThisBatch} questions)`;
+                addLogToGenerationScreen(`Requesting AI for batch ${i + 1}/${numBatches} (${questionsInThisBatch} ${section} questions, Difficulty: ${difficulty}).`);
 
-                function simulateRPMIncrease() {
-                    if (currentRPM <= maxRPM) {
-                        drawGauge(currentRPM);
-                        currentRPM += increment;
-                        setTimeout(simulateRPMIncrease, delay);
+                const batch = await callGeminiAPIForQuestions(questionsInThisBatch, difficulty, section, existingIdsInSession);
+                if (!appState.isGeneratingQuestions) break; 
+
+                if (batch && batch.length > 0) {
+                    addLogToGenerationScreen(`AI returned ${batch.length} questions for batch ${i + 1}.`);
+                    allNewQuestions = allNewQuestions.concat(batch);
+                    batch.forEach(q => existingIdsInSession.push(q.id)); 
+                } else {
+                    addLogToGenerationScreen(`AI failed to return questions for batch ${i + 1} or returned empty.`);
+                    if (i < numBatches -1) { 
+                        addLogToGenerationScreen("Skipping to next batch due to empty/failed current batch.");
                     } else {
-                        simulateRPMDecrease();
+                         addLogToGenerationScreen("Last batch failed or returned empty. Proceeding with what was gathered.");
                     }
                 }
+            }
+            return allNewQuestions;
+        }
 
-                function simulateRPMDecrease() {
-                    if (currentRPM >= 0) {
-                        drawGauge(currentRPM);
-                        currentRPM -= increment;
-                        setTimeout(simulateRPMDecrease, delay);
-                    }
-                }
 
-                simulateRPMIncrease();
-            });
+        function startCurrentPart() { 
+            const partConfig = appState.currentPart === 1 ? appState.examConstants.part1 : appState.examConstants.part2;
+            const questionsForCurrentPart = appState.currentPart === 1 ? appState.part1Questions : appState.part2Questions;
 
-            // Toast notification system
-            function showToast(message, type = 'success') {
-                const toast = document.createElement('div');
-                toast.className = `toast ${type}`;
-                toast.style.cssText = `
-                    position: fixed;
-                    bottom: 80px;
-                    left: 50%;
-                    transform: translateX(-50%);
-                    background: ${type === 'success' ? '#22c55e' : '#ef4444'};
-                    color: white;
-                    padding: 12px 24px;
-                    border-radius: 8px;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                    z-index: 1000;
-                    animation: slideUp 0.3s ease-out;
-                `;
-                toast.textContent = message;
-                document.body.appendChild(toast);
+            if (!questionsForCurrentPart || questionsForCurrentPart.length === 0) {
+                showMessageModal("Error", `No questions loaded for Part ${appState.currentPart}. Exam cannot continue.`, () => showScreen('mainMenu'));
+                appState.examInProgress = false;
+                appState.isGeneratingQuestions = false;
+                return;
+            }
+            appState.isGeneratingQuestions = false; 
 
-                setTimeout(() => {
-                    toast.style.animation = 'slideDown 0.3s ease-out forwards';
-                    setTimeout(() => toast.remove(), 300);
-                }, 3000);
+            examPartTitle.textContent = `Part ${appState.currentPart}: ${partConfig.name}`;
+            appState.timeLeft = partConfig.durationMinutes * 60;
+            timerDisplay.textContent = `${String(partConfig.durationMinutes).padStart(2, '0')}:00`;
+            
+            updateTimerDisplay(); 
+            clearInterval(appState.timerInterval);
+            appState.timerInterval = setInterval(updateTimer, 1000);
+            
+            loadQuestion();
+            showScreen('exam');
+            saveProgressBtn.classList.remove('hidden');
+            nextQuestionBtn.textContent = 'Next Question';
+            finishPartBtn.classList.add('hidden');
+            explainDeeperBtn.classList.add('hidden');
+        }
+        function loadQuestion() { 
+            const questions = appState.currentPart === 1 ? appState.part1Questions : appState.part2Questions;
+            if (appState.currentQuestionIndex >= questions.length) {
+                console.warn("Attempted to load question beyond available range. Finishing part.");
+                handleFinishPart(); 
+                return;
             }
 
-            // Initialize the first section
-            showSection('gauge');
+            const question = questions[appState.currentQuestionIndex];
+            if (!question || !question.options || !Array.isArray(question.options) || question.options.length === 0) { 
+                console.error("Invalid question object loaded:", question);
+                showMessageModal("Question Error", "An error occurred loading the question. Skipping to next or ending part.");
+                if (appState.currentQuestionIndex < questions.length - 1) {
+                    appState.currentQuestionIndex++;
+                    loadQuestion();
+                } else {
+                    handleFinishPart();
+                }
+                return;
+            }
 
-            const navButton = document.getElementById('navButton');
-            const sidePanel = document.getElementById('sidePanel');
+            questionTextEl.textContent = question.text;
+            questionCounter.textContent = `Question ${appState.currentQuestionIndex + 1}/${questions.length}`;
+            
+            const progress = ((appState.currentQuestionIndex + 1) / questions.length) * 100;
+            progressBarFill.style.width = `${progress}%`;
 
-            navButton.addEventListener('click', () => {
-                sidePanel.classList.toggle('open');
+            optionsArea.innerHTML = '';
+            question.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.classList.add('option-btn');
+                button.textContent = option.text;
+                button.onclick = () => selectAnswer(index);
+                optionsArea.appendChild(button);
             });
+
+            if (question.wpsSnippet) { 
+                wpsSnippetText.textContent = question.wpsSnippet;
+                wpsSnippetArea.classList.remove('hidden');
+                document.getElementById('wps-display-area').classList.add('hidden'); 
+                questionDetailsArea.classList.add('md:col-span-2'); 
+                questionDetailsArea.classList.remove('md:col-span-1');
+            } else { 
+                document.getElementById('wps-display-area').classList.add('hidden'); 
+                wpsSnippetArea.classList.add('hidden');
+                questionDetailsArea.classList.add('md:col-span-2');
+                questionDetailsArea.classList.remove('md:col-span-1');
+            }
+
+            feedbackArea.classList.add('hidden');
+            explainDeeperBtn.classList.add('hidden');
+            nextQuestionBtn.classList.add('hidden'); 
+
+            if (appState.currentQuestionIndex === questions.length - 1) { 
+                nextQuestionBtn.classList.add('hidden');
+                finishPartBtn.classList.remove('hidden');
+            } else {
+                finishPartBtn.classList.add('hidden');
+            }
+        }
+        function selectAnswer(optionIndex) { 
+            const questions = appState.currentPart === 1 ? appState.part1Questions : appState.part2Questions;
+            const userAnswers = appState.currentPart === 1 ? appState.part1UserAnswers : appState.part2UserAnswers;
+            
+            const question = questions[appState.currentQuestionIndex];
+            const selectedOption = question.options[optionIndex];
+            const isCorrect = selectedOption.isCorrect;
+
+            userAnswers.push({
+                questionId: question.id, 
+                questionText: question.text, 
+                selectedOptionIndex: optionIndex,
+                selectedOptionText: selectedOption.text, 
+                correctOptionText: question.options.find(opt => opt.isCorrect).text, 
+                isCorrect: isCorrect,
+                explanation: question.explanation
+            });
+
+            if (isCorrect) {
+                if (appState.currentPart === 1) appState.part1Score++;
+                else appState.part2Score++;
+            }
+
+            const optionButtons = optionsArea.querySelectorAll('.option-btn');
+            optionButtons.forEach((btn, index) => {
+                btn.disabled = true;
+                if (index === optionIndex) {
+                    btn.classList.add(isCorrect ? 'correct' : 'incorrect', 'selected');
+                } else if (question.options[index].isCorrect) {
+                    btn.classList.add('correct'); 
+                }
+            });
+
+            feedbackTextEl.textContent = (isCorrect ? 'Correct! ' : 'Incorrect. ') + question.explanation;
+            feedbackArea.classList.remove('hidden');
+            feedbackArea.classList.toggle('bg-green-900', isCorrect);
+            feedbackArea.classList.toggle('bg-red-900', !isCorrect);
+            
+            explainDeeperBtn.classList.remove('hidden'); 
+
+            if (appState.currentQuestionIndex < questions.length - 1) {
+                nextQuestionBtn.classList.remove('hidden');
+                finishPartBtn.classList.add('hidden');
+            } else { 
+                nextQuestionBtn.classList.add('hidden');
+                finishPartBtn.classList.remove('hidden');
+            }
+        }
+        function handleNextQuestion() { 
+            appState.currentQuestionIndex++;
+            loadQuestion();
+        }
+        function handleFinishPart() { 
+            clearInterval(appState.timerInterval); 
+            timerDisplay.classList.remove('timer-low');
+            appState.isGeneratingQuestions = true; 
+
+            if (appState.currentPart === 1) {
+                saveExamProgress(); 
+                intermediateTitle.textContent = `Part 1: ${appState.examConstants.part1.name} Completed!`;
+                const questionsInPart1 = appState.part1Questions.length || appState.examConstants.part1.numQuestions;
+                intermediateMessage.textContent = `Your score for Part 1: ${appState.part1Score}/${questionsInPart1}`;
+                
+                const proceedBtnText = proceedToPart2Btn.querySelector('.btn-text');
+                const proceedSpinner = proceedToPart2Btn.querySelector('.spinner');
+                proceedBtnText.textContent = 'Proceed to Part 2';
+                proceedSpinner.classList.add('hidden');
+                proceedToPart2Btn.disabled = false;
+
+                showScreen('intermediate');
+            } else { 
+                appState.examInProgress = false;
+                appState.isGeneratingQuestions = false;
+                displayFinalResults();
+                saveFinalResultsToLeaderboard(); 
+            }
+        }
+        function displayFinalResults() { 
+            showScreen('results');
+            resultsUserNameEl.textContent = `Examinee: ${appState.userName}`;
+            const questionsInPart1 = appState.part1Questions.length || appState.examConstants.part1.numQuestions;
+            const questionsInPart2 = appState.part2Questions.length || appState.examConstants.part2.numQuestions;
+
+            scoreDisplayPart1El.textContent = `Part 1 Score: ${appState.part1Score}/${questionsInPart1}`;
+            scoreDisplayPart2El.textContent = `Part 2 Score: ${appState.part2Score}/${questionsInPart2}`;
+            
+            const totalAttempted = questionsInPart1 + questionsInPart2;
+            const totalScore = appState.part1Score + appState.part2Score;
+            const percentage = totalAttempted > 0 ? (totalScore / totalAttempted) * 100 : 0;
+
+            scoreDisplayTotalEl.textContent = `Total Score: ${totalScore}/${totalAttempted} (${percentage.toFixed(1)}%)`;
+            
+            if (percentage >= appState.passMarkPercentage) {
+                passFailMessageEl.textContent = "Congratulations! You Passed!";
+                passFailMessageEl.className = "text-xl mb-6 text-green-400 font-semibold";
+            } else {
+                passFailMessageEl.textContent = "Unfortunately, You Did Not Pass. Keep Practicing!";
+                passFailMessageEl.className = "text-xl mb-6 text-red-400 font-semibold";
+            }
+
+            wrongAnswersSummaryEl.innerHTML = '<h4 class="text-xl font-semibold text-rose-400 mb-3">Review Incorrect Answers:</h4>';
+            const allUserAnswers = [...appState.part1UserAnswers, ...appState.part2UserAnswers];
+            const wrongAnswers = allUserAnswers.filter(ans => !ans.isCorrect);
+            if (wrongAnswers.length > 0) {
+                wrongAnswers.forEach(ans => {
+                    const div = document.createElement('div');
+                    div.classList.add('mb-4', 'p-3', 'bg-slate-700', 'rounded-md');
+                    div.innerHTML = `
+                        <p class="font-semibold text-slate-200">Q: ${ans.questionText}</p>
+                        <p class="text-red-400">Your answer: ${ans.selectedOptionText}</p>
+                        <p class="text-green-400">Correct answer: ${ans.correctOptionText}</p>
+                        <p class="text-xs text-slate-400 mt-1">Explanation: ${ans.explanation}</p>
+                    `;
+                    wrongAnswersSummaryEl.appendChild(div);
+                });
+            } else {
+                wrongAnswersSummaryEl.innerHTML += '<p class="text-slate-300">No incorrect answers! Great job!</p>';
+            }
+        }
+        function updateTimer() { 
+            appState.timeLeft--;
+            updateTimerDisplay();
+            if (appState.timeLeft <= 0) {
+                clearInterval(appState.timerInterval);
+                showMessageModal("Time's Up!", "Time for this part has finished.", handleFinishPart);
+            }
+            if (appState.timeLeft <= 60 && !timerDisplay.classList.contains('timer-low')) { 
+                timerDisplay.classList.add('timer-low');
+            } else if (appState.timeLeft > 60 && timerDisplay.classList.contains('timer-low')) {
+                timerDisplay.classList.remove('timer-low');
+            }
+        }
+        function updateTimerDisplay() { 
+            const minutes = Math.floor(appState.timeLeft / 60);
+            const seconds = appState.timeLeft % 60;
+            timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+        function shuffleArray(array) { 
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+        function saveExamProgress() { 
+            if (!appState.examInProgress && !appState.isGeneratingQuestions) { 
+                showMessageModal("Info", "No exam in progress to save.");
+                return;
+            }
+            const progressData = {
+                userName: appState.userName,
+                geminiApiKey: appState.geminiApiKey, 
+                // appsScriptUrl is hardcoded, no need to save it in progress
+                selectedDifficulty: appState.selectedDifficulty,
+                currentPart: appState.currentPart, 
+                part1Questions: appState.part1Questions, 
+                part2Questions: appState.part2Questions, 
+                currentQuestionIndex: appState.currentQuestionIndex,
+                part1UserAnswers: appState.part1UserAnswers,
+                part2UserAnswers: appState.part2UserAnswers,
+                part1Score: appState.part1Score,
+                part2Score: appState.part2Score,
+                timeLeft: appState.timeLeft, 
+                examInProgress: appState.examInProgress, 
+                isGeneratingQuestions: appState.isGeneratingQuestions, 
+                timestamp: new Date().toISOString()
+            };
+            try {
+                localStorage.setItem('cswipMockExamProgress_GS_HC', JSON.stringify(progressData)); // HC for Hardcoded URL
+                showMessageModal("Progress Saved", "Your current exam progress has been saved locally.");
+            } catch (e) {
+                console.error("Error saving progress:", e);
+                showMessageModal("Save Error", "Could not save progress.");
+            }
+        }
+        function loadExamProgress() { 
+             try {
+                const savedProgressJSON = localStorage.getItem('cswipMockExamProgress_GS_HC');
+                if (savedProgressJSON) {
+                    const progressData = JSON.parse(savedProgressJSON);
+                    
+                    if (typeof progressData.currentPart !== 'number' || !progressData.selectedDifficulty) {
+                        throw new Error("Invalid progress data structure.");
+                    }
+
+                    appState.userName = progressData.userName || 'Anonymous';
+                    appState.geminiApiKey = progressData.geminiApiKey || '';
+                    // appState.appsScriptUrl is hardcoded
+                    appState.selectedDifficulty = progressData.selectedDifficulty;
+                    appState.currentPart = progressData.currentPart;
+                    appState.part1Questions = progressData.part1Questions || [];
+                    appState.part2Questions = progressData.part2Questions || []; 
+                    appState.currentQuestionIndex = progressData.currentQuestionIndex || 0;
+                    appState.part1UserAnswers = progressData.part1UserAnswers || [];
+                    appState.part2UserAnswers = progressData.part2UserAnswers || [];
+                    appState.part1Score = progressData.part1Score || 0;
+                    appState.part2Score = progressData.part2Score || 0;
+                    appState.timeLeft = progressData.timeLeft || 0;
+                    appState.examInProgress = progressData.examInProgress || false; 
+                    appState.isGeneratingQuestions = progressData.isGeneratingQuestions || false; 
+
+
+                    userNameInput.value = appState.userName;
+                    apiKeyInput.value = appState.geminiApiKey;
+                    // appsScriptUrlInput is removed
+                    difficultySelect.value = appState.selectedDifficulty;
+
+                    showMessageModal("Progress Loaded", "Attempting to resume exam...", async () => {
+                        if (!getAppsScriptUrl()) { // Should always be true now
+                             showMessageModal("Configuration Error", "Google Apps Script URL is not configured correctly.", () => { showScreen('mainMenu'); });
+                             return;
+                        }
+
+                        if (appState.isGeneratingQuestions || (appState.currentPart === 1 && !appState.examInProgress) || (appState.currentPart === 1 && appState.part1Questions.length === 0) ) {
+                            addLogToGenerationScreen("Resuming: Generation was incomplete or Part 1 not started. Restarting full exam preparation.");
+                            startExamFlow(); 
+                        } else if (appState.currentPart === 1 && appState.examInProgress) {
+                             addLogToGenerationScreen("Resuming active Part 1.");
+                            startCurrentPart();
+                        } else if (appState.currentPart === 2 && (!appState.part2Questions || appState.part2Questions.length === 0) && !appState.examInProgress) {
+                            addLogToGenerationScreen("Resuming: About to start Part 2 preparation.");
+                            intermediateTitle.textContent = `Part 1: ${appState.examConstants.part1.name} Completed (Resumed)`;
+                            const questionsInPart1 = appState.part1Questions.length || appState.examConstants.part1.numQuestions;
+                            intermediateMessage.textContent = `Your score for Part 1: ${appState.part1Score}/${questionsInPart1}`;
+                            showScreen('intermediate'); 
+                        } else if (appState.currentPart === 2 && appState.examInProgress) {
+                            addLogToGenerationScreen("Resuming active Part 2.");
+                            startCurrentPart();
+                        } else {
+                             addLogToGenerationScreen("Unknown resume state. Defaulting to main menu.");
+                            showScreen('mainMenu');
+                        }
+                    });
+
+                } else {
+                    showMessageModal("No Saved Progress", "No exam progress found to load.");
+                }
+            } catch (e) {
+                console.error("Error loading progress:", e);
+                localStorage.removeItem('cswipMockExamProgress_GS_HC'); 
+                showMessageModal("Load Error", "Could not load progress. Data might be corrupted or invalid. Saved progress has been cleared.");
+            }
+        }
+        function saveResultsToDevice() { 
+            const questionsInPart1 = appState.part1Questions.length || appState.examConstants.part1.numQuestions;
+            const questionsInPart2 = appState.part2Questions.length || appState.examConstants.part2.numQuestions;
+            const totalAttempted = questionsInPart1 + questionsInPart2;
+            const totalScore = appState.part1Score + appState.part2Score;
+            const percentage = totalAttempted > 0 ? (totalScore / totalAttempted) * 100 : 0;
+
+            const resultsData = {
+                userName: appState.userName,
+                difficulty: appState.selectedDifficulty,
+                part1Score: appState.part1Score,
+                part1Total: questionsInPart1,
+                part2Score: appState.part2Score,
+                part2Total: questionsInPart2,
+                totalScore: totalScore,
+                totalAttempted: totalAttempted,
+                percentage: percentage.toFixed(1),
+                passMarkPercentage: appState.passMarkPercentage,
+                passed: percentage >= appState.passMarkPercentage,
+                date: new Date().toISOString(),
+                allUserAnswers: [...appState.part1UserAnswers, ...appState.part2UserAnswers] 
+            };
+            try {
+                let pastResults = JSON.parse(localStorage.getItem('cswipMockExamPastResults_GS_HC')) || []; 
+                pastResults.unshift(resultsData); 
+                if (pastResults.length > 10) pastResults.pop(); 
+                localStorage.setItem('cswipMockExamPastResults_GS_HC', JSON.stringify(pastResults));
+                showMessageModal("Results Saved", "Your exam results have been saved to your device (locally).");
+            } catch (e) {
+                console.error("Error saving results:", e);
+                showMessageModal("Save Error", "Could not save results to device.");
+            }
+        }
+        function loadPastResultsForReview() { 
+            const pastResults = JSON.parse(localStorage.getItem('cswipMockExamPastResults_GS_HC')) || [];
+            if (pastResults.length === 0) {
+                showMessageModal("No Past Results", "No previously saved exam results found on this device.");
+                return;
+            }
+            const latestResult = pastResults[0];
+            
+            appState.userName = latestResult.userName;
+            appState.selectedDifficulty = latestResult.difficulty;
+            appState.part1Score = latestResult.part1Score;
+            appState.part1Questions = { length: latestResult.part1Total }; 
+            appState.part2Score = latestResult.part2Score;
+            appState.part2Questions = { length: latestResult.part2Total }; 
+            appState.part1UserAnswers = latestResult.allUserAnswers.slice(0, latestResult.part1Total);
+            appState.part2UserAnswers = latestResult.allUserAnswers.slice(latestResult.part1Total);
+            appState.passMarkPercentage = latestResult.passMarkPercentage;
+            
+            displayFinalResults(); 
+            showMessageModal("Past Result Loaded", `Showing result from ${new Date(latestResult.date).toLocaleString()}`);
+        }
+        
+        // --- Google Sheets Interaction via Apps Script ---
+        function getAppsScriptUrl() {
+            return appState.appsScriptUrl; // Now returns the hardcoded URL
+        }
+
+        async function fetchQuestionsFromGoogleSheet(count, difficulty, section) {
+            const scriptUrl = getAppsScriptUrl();
+            if (!scriptUrl) {
+                addLogToGenerationScreen("Apps Script URL not configured. Cannot fetch from Google Sheet.");
+                return [];
+            }
+            const url = `${scriptUrl}?action=getQuestions&difficulty=${difficulty}&section=${section}&count=${count}`;
+            addLogToGenerationScreen(`Fetching from GSheet: ${url.substring(0,100)}...`);
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Google Sheet fetch failed: ${response.statusText}`);
+                }
+                const data = await response.json();
+                if (data.success && Array.isArray(data.questions)) {
+                    return data.questions;
+                } else {
+                    console.error("Error fetching questions from GSheet:", data.error || "Unknown error");
+                    addLogToGenerationScreen(`GSheet Fetch Error: ${data.error || 'Unknown'}`);
+                    return [];
+                }
+            } catch (error) {
+                console.error("Error calling Apps Script (getQuestions):", error);
+                addLogToGenerationScreen(`Apps Script Call Error (getQuestions): ${error.message}`);
+                return [];
+            }
+        }
+
+        async function saveQuestionsToGoogleSheet(questionsArray) {
+            const scriptUrl = getAppsScriptUrl();
+            if (!scriptUrl || !Array.isArray(questionsArray) || questionsArray.length === 0) return;
+
+            addLogToGenerationScreen(`Saving ${questionsArray.length} questions to Google Sheet...`);
+            try {
+                const response = await fetch(scriptUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ action: 'saveQuestions', questions: questionsArray })
+                });
+                if (!response.ok) {
+                    throw new Error(`Google Sheet save questions failed: ${response.statusText}`);
+                }
+                const data = await response.json();
+                if (data.success) {
+                    addLogToGenerationScreen(`Successfully saved ${data.savedCount || questionsArray.length} questions to Google Sheet.`);
+                } else {
+                    console.error("Error saving questions to GSheet:", data.error || "Unknown error");
+                    addLogToGenerationScreen(`GSheet Save Error: ${data.error || 'Unknown'}`);
+                }
+            } catch (error) {
+                console.error("Error calling Apps Script (saveQuestions):", error);
+                addLogToGenerationScreen(`Apps Script Call Error (saveQuestions): ${error.message}`);
+            }
+        }
+
+        async function saveFinalResultsToLeaderboard() { 
+            const scriptUrl = getAppsScriptUrl();
+            if (!scriptUrl) {
+                console.warn("Apps Script URL not set. Cannot save leaderboard to Google Sheet.");
+                return;
+            }
+            const questionsInPart1 = appState.part1Questions.length || appState.examConstants.part1.numQuestions;
+            const questionsInPart2 = appState.part2Questions.length || appState.examConstants.part2.numQuestions;
+            const totalAttempted = questionsInPart1 + questionsInPart2;
+            const totalScore = appState.part1Score + appState.part2Score;
+            if (totalAttempted === 0) return; 
+
+            const leaderboardEntry = {
+                name: appState.userName,
+                totalScore: totalScore,
+                totalAttempted: totalAttempted,
+                percentage: ((totalScore / totalAttempted) * 100).toFixed(1),
+                difficulty: appState.selectedDifficulty,
+                date: new Date().toISOString() 
+            };
+            
+            addLogToGenerationScreen("Saving score to Google Sheet Leaderboard...");
+            try {
+                const response = await fetch(scriptUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'saveScore', scoreData: leaderboardEntry })
+                });
+                if (!response.ok) throw new Error(`Save leaderboard score failed: ${response.statusText}`);
+                const data = await response.json();
+                if (data.success) {
+                    addLogToGenerationScreen("Score saved to Google Sheet Leaderboard.");
+                } else {
+                    console.error("Error saving score to GSheet Leaderboard:", data.error);
+                    addLogToGenerationScreen(`GSheet Leaderboard Save Error: ${data.error}`);
+                }
+            } catch (error) {
+                console.error("Error calling Apps Script (saveScore):", error);
+                addLogToGenerationScreen(`Apps Script Call Error (saveScore): ${error.message}`);
+            }
+        }
+        
+        async function displayLeaderboard() { 
+            const scriptUrl = getAppsScriptUrl();
+            if (!scriptUrl) {
+                showMessageModal("Configuration Error", "Google Apps Script URL is not set. Cannot display leaderboard.");
+                return;
+            }
+            leaderboardContentArea.innerHTML = '<div class="spinner mx-auto my-4"></div> <p>Loading leaderboard...</p>';
+            showScreen('leaderboard');
+
+            try {
+                const response = await fetch(`${scriptUrl}?action=getLeaderboard`);
+                if (!response.ok) throw new Error(`Fetch leaderboard failed: ${response.statusText}`);
+                const data = await response.json();
+
+                leaderboardContentArea.innerHTML = ''; 
+                if (data.success && Array.isArray(data.leaderboard)) {
+                    if (data.leaderboard.length === 0) {
+                        leaderboardContentArea.innerHTML = '<p class="text-slate-400">No scores yet. Be the first!</p>';
+                        return;
+                    }
+                    const table = document.createElement('table');
+                    table.className = 'w-full text-sm text-left text-slate-300';
+                    const thead = table.createTHead();
+                    thead.innerHTML = `
+                        <tr class="border-b border-slate-700">
+                            <th scope="col" class="px-3 py-2">Rank</th>
+                            <th scope="col" class="px-3 py-2">Name</th>
+                            <th scope="col" class="px-3 py-2">Score</th>
+                            <th scope="col" class="px-3 py-2">Difficulty</th>
+                            <th scope="col" class="px-3 py-2">Date</th>
+                        </tr>
+                    `;
+                    const tbody = table.createTBody();
+                    data.leaderboard.forEach((entry, index) => {
+                        const row = tbody.insertRow();
+                        row.innerHTML = `
+                            <td class="px-3 py-2">${index + 1}</td>
+                            <td class="px-3 py-2 font-medium text-sky-400">${entry.name}</td>
+                            <td class="px-3 py-2">${entry.percentage}% (${entry.totalScore}/${entry.totalAttempted})</td>
+                            <td class="px-3 py-2">${entry.difficulty}</td>
+                            <td class="px-3 py-2 text-xs">${entry.date}</td> 
+                        `;
+                    });
+                    leaderboardContentArea.appendChild(table);
+                } else {
+                    leaderboardContentArea.innerHTML = `<p class="text-red-400">Error loading leaderboard: ${data.error || 'Unknown error'}</p>`;
+                }
+            } catch (error) {
+                console.error("Error calling Apps Script (getLeaderboard):", error);
+                leaderboardContentArea.innerHTML = `<p class="text-red-400">Failed to load leaderboard: ${error.message}</p>`;
+            }
+        }
+
+
+        // --- GEMINI API INTEGRATION ---
+        function getApiKey() { return appState.geminiApiKey || ""; }
+        async function callGeminiAPI(prompt, buttonElement) { 
+            const apiKey = getApiKey(); 
+            const buttonTextEl = buttonElement ? buttonElement.querySelector('.btn-text') : null;
+            const spinnerEl = buttonElement ? buttonElement.querySelector('.spinner') : null;
+            const originalButtonText = buttonTextEl ? buttonTextEl.textContent : '';
+
+            if(buttonTextEl) buttonTextEl.textContent = 'Thinking...';
+            if(spinnerEl) spinnerEl.classList.remove('hidden');
+            if(buttonElement) buttonElement.disabled = true;
+
+            let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+            const payload = { contents: chatHistory };
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorBody = await response.json();
+                    console.error("Gemini API Error:", errorBody);
+                    let errorMessage = `API request failed with status ${response.status}.`;
+                    if (errorBody && errorBody.error && errorBody.error.message) {
+                        errorMessage += ` Message: ${errorBody.error.message}`;
+                    }
+                    if (response.status === 400 && errorBody?.error?.message.toLowerCase().includes("api key not valid")) {
+                        errorMessage += " Please check if your API key is correct and has permissions for the Gemini API.";
+                    }
+                     if (response.status === 429) {
+                        errorMessage += " You might have exceeded your quota. Please try again later.";
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    return result.candidates[0].content.parts[0].text;
+                } else if (result.candidates && result.candidates.length > 0 && result.candidates[0].finishReason === "SAFETY") {
+                     throw new Error("Content generation stopped due to safety reasons. Try a different prompt.");
+                } else {
+                    console.error("Unexpected Gemini API response structure:", result);
+                    throw new Error("Could not extract text from Gemini response. The response might be empty or malformed.");
+                }
+            } catch (error) {
+                console.error('Error calling Gemini API:', error);
+                if (appState.isGeneratingQuestions) { 
+                    showMessageModal("AI Error", `Could not get a response from the AI. ${error.message}`);
+                }
+                return null;
+            } finally {
+                if(buttonTextEl) buttonTextEl.textContent = originalButtonText;
+                if(spinnerEl) spinnerEl.classList.add('hidden');
+                if(buttonElement) buttonElement.disabled = false;
+            }
+        }
+        async function callGeminiAPIForQuestions(count, difficulty, sectionType, existingQuestionIds = []) { 
+            const sectionDetails = sectionType === 'general' 
+                ? "general welding inspection knowledge, covering topics like welding processes, symbols, NDT, material science, and inspector duties"
+                : "Welding Procedure Specifications (WPS), PQR interpretation, welder qualifications, and related code requirements (e.g., ASME IX, ISO 15614)";
+
+            let prompt = `
+                You are an expert CSWIP 3.1 exam question writer.
+                Generate ${count} unique multiple-choice questions (MCQs) suitable for the CSWIP 3.1 exam.
+                The questions should focus on: ${sectionDetails}.
+                The difficulty of the questions should be: ${difficulty}.
+                Ensure the questions are distinct from any previously generated ones if possible (though this is a best-effort for the API).
+                ${existingQuestionIds.length > 0 ? `Avoid generating questions similar to these existing IDs/concepts if possible: ${existingQuestionIds.slice(0,5).join(', ')} (sample).` : ''}
+
+                For each question, provide:
+                1. "id": A unique string identifier for this question (e.g., "gen_q_001", "wps_q_xyz"). Generate this yourself using a combination of section, difficulty, and a random number/timestamp to ensure high probability of uniqueness.
+                2. "text": The question itself.
+                3. "options": An array of 4 objects, each with "text" (the option) and "isCorrect" (boolean, only one true per question). Ensure exactly one option is correct.
+                4. "explanation": A brief explanation for the correct answer.
+                5. "wpsSnippet": (Primarily for 'wps' section, optional for 'general') A very short, relevant snippet of a mock WPS or a scenario that the question is based on. This snippet should be plain text. If not applicable, provide an empty string or omit.
+
+                Return the output as a valid JSON array of question objects. Ensure the JSON is well-formed and directly parsable. Do not include any introductory text or markdown formatting around the JSON array.
+                Example of a single question object structure:
+                {
+                    "id": "wps_example_01",
+                    "text": "According to a WPS specifying E7018 electrodes, what is the typical F-Number?",
+                    "options": [
+                        {"text": "F1", "isCorrect": false},
+                        {"text": "F4", "isCorrect": true},
+                        {"text": "F6", "isCorrect": false},
+                        {"text": "F3", "isCorrect": false}
+                    ],
+                    "explanation": "E7018 electrodes are classified under F-Number 4 according to ASME IX.",
+                    "wpsSnippet": "Base Material: ASTM A36, Filler Metal: E7018"
+                }
+            `;
+            
+            const dummyButton = document.createElement('button'); 
+            dummyButton.innerHTML = '<span class="btn-text"></span><div class="spinner hidden"></div>';
+            
+            const responseText = await callGeminiAPI(prompt, dummyButton); 
+            if (responseText) {
+                try {
+                    let cleanedResponseText = responseText.trim();
+                    if (cleanedResponseText.startsWith("```json")) cleanedResponseText = cleanedResponseText.substring(7);
+                    if (cleanedResponseText.endsWith("```")) cleanedResponseText = cleanedResponseText.substring(0, cleanedResponseText.length - 3);
+                    
+                    const generatedQuestions = JSON.parse(cleanedResponseText);
+                    if (Array.isArray(generatedQuestions) && generatedQuestions.every(q => q.id && q.text && Array.isArray(q.options) && q.options.length === 4 && q.explanation && q.options.filter(opt => opt.isCorrect).length === 1)) {
+                        return generatedQuestions.map(q => ({...q, section: sectionType, difficulty: difficulty })); 
+                    } else {
+                        console.error("Gemini response is not a valid array of questions or questions have invalid structure:", generatedQuestions);
+                        addLogToGenerationScreen("AI Error: AI generated an invalid question format or structure.");
+                        return null;
+                    }
+                } catch (e) {
+                    console.error("Error parsing Gemini JSON response for questions:", e, "\nResponse was:\n", responseText);
+                    addLogToGenerationScreen("AI Error: Could not parse AI-generated questions. Raw response logged to console.");
+                    return null;
+                }
+            }
+            return null;
+        }
+        async function handleExplainDeeper() { 
+            const questions = appState.currentPart === 1 ? appState.part1Questions : appState.part2Questions;
+            const currentQuestion = questions[appState.currentQuestionIndex];
+            if (!currentQuestion) return;
+
+            const prompt = `
+                You are an expert welding inspection instructor preparing a student for the CSWIP 3.1 exam.
+                Explain the following concept related to a CSWIP 3.1 exam question in more detail. 
+                Focus on clarifying the core principles and practical implications for a welding inspector.
+                Keep the explanation concise but thorough, suitable for exam preparation.
+
+                Original Question: "${currentQuestion.text}"
+                Original Explanation: "${currentQuestion.explanation}"
+                ${currentQuestion.wpsSnippet ? `Context/WPS Snippet: "${currentQuestion.wpsSnippet}"` : ""}
+
+                Provide a deeper explanation of the underlying topic.
+            `;
+            
+            const deeperExplanation = await callGeminiAPI(prompt, explainDeeperBtn);
+            if (deeperExplanation) {
+                showMessageModal("✨ Deeper Explanation by Gemini", deeperExplanation, () => {}, true);
+            }
+        }
+        async function handleGenerateStudyTips() { 
+            const allUserAnswers = [...appState.part1UserAnswers, ...appState.part2UserAnswers];
+            const wrongAnswers = allUserAnswers.filter(ans => !ans.isCorrect);
+            if (wrongAnswers.length === 0) {
+                showMessageModal("Great Job!", "No incorrect answers to generate tips for. You're doing great!");
+                return;
+            }
+
+            let promptContent = `I am preparing for the CSWIP 3.1 welding inspector exam. Based on the following incorrectly answered mock exam questions, provide personalized study tips. For each topic I struggled with, suggest key areas to focus on, relevant standards or sections if applicable (e.g., ASME IX, AWS D1.1, ISO 5817), and practical advice for better understanding. Format the tips clearly, perhaps using bullet points for each topic or question.\n\n`;
+            
+            wrongAnswers.forEach((ans, index) => {
+                promptContent += `Mistake ${index + 1}:\n`;
+                promptContent += `Question: "${ans.questionText}"\n`;
+                promptContent += `Your Answer: "${ans.selectedOptionText}"\n`;
+                promptContent += `Correct Answer: "${ans.correctOptionText}"\n`;
+                promptContent += `Provided Explanation: "${ans.explanation}"\n\n`;
+            });
+
+            const studyTips = await callGeminiAPI(promptContent, generateStudyTipsBtn);
+            if (studyTips) {
+                showMessageModal("✨ Personalized Study Tips by Gemini", studyTips, () => {}, true);
+            }
+        }
+
+        // --- EVENT LISTENERS ---
+        userNameInput.addEventListener('change', () => { 
+            appState.userName = userNameInput.value.trim();
+            localStorage.setItem('cswipUserName', appState.userName);
         });
+        saveApiKeyBtn.addEventListener('click', () => { 
+            appState.geminiApiKey = apiKeyInput.value.trim();
+            localStorage.setItem('cswipGeminiApiKey', appState.geminiApiKey);
+            showMessageModal("API Key Saved", "Your Gemini API Key has been saved locally.");
+        });
+        startExamBtn.addEventListener('click', () => { 
+            const savedProgressJSON = localStorage.getItem('cswipMockExamProgress_GS_HC');
+            if (savedProgressJSON) {
+                 showMessageModal("Confirm New Exam", "Starting a new exam will clear any unsaved progress. Continue?", () => {
+                    localStorage.removeItem('cswipMockExamProgress_GS_HC'); 
+                    startExamFlow();
+                 });
+            } else {
+                startExamFlow();
+            }
+        });
+        loadProgressMenuBtn.addEventListener('click', loadExamProgress);
+        proceedToPart2Btn.addEventListener('click', prepareAndStartPart2); 
+        intermediateBackToMenuBtn.addEventListener('click', () => {
+            appState.isGeneratingQuestions = false; 
+            showScreen('mainMenu');
+        });
+        cancelGenerationBtn.addEventListener('click', () => {
+            appState.isGeneratingQuestions = false;
+            addLogToGenerationScreen("User cancelled question generation.");
+            showMessageModal("Cancelled", "Question generation has been cancelled.", () => showScreen('mainMenu'));
+        });
+
+        nextQuestionBtn.addEventListener('click', handleNextQuestion);
+        finishPartBtn.addEventListener('click', handleFinishPart);
+        saveProgressBtn.addEventListener('click', saveExamProgress);
+        explainDeeperBtn.addEventListener('click', handleExplainDeeper);
+        generateStudyTipsBtn.addEventListener('click', handleGenerateStudyTips);
+        backToMenuBtn.addEventListener('click', () => { 
+            timerDisplay.classList.remove('timer-low'); 
+            showScreen('mainMenu');
+        });
+        saveResultsToDeviceBtn.addEventListener('click', saveResultsToDevice);
+        loadResultsBtn.addEventListener('click', loadPastResultsForReview);
+        leaderboardBtn.addEventListener('click', displayLeaderboard);
+        leaderboardBackToMenuBtn.addEventListener('click', () => showScreen('mainMenu'));
+        
+
+        // --- INITIALIZATION ---
+        // Changed to a non-async function as it doesn't use await directly
+        function initializeApp() {
+            userNameInput.value = appState.userName;
+            apiKeyInput.value = appState.geminiApiKey;
+            difficultySelect.value = appState.selectedDifficulty; 
+            showScreen('mainMenu'); 
+        }
+        
+        initializeApp();
+
     </script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js');
-      });
-    }
-
-    function initDatabase() {
-      const request = indexedDB.open('pwa_database', 1);
-
-      request.onerror = function(event) {
-        console.error('Database error:', event.target.error);
-      };
-
-      request.onupgradeneeded = function(event) {
-        const db = event.target.result;
-        const objectStore = db.createObjectStore('settings', { keyPath: 'id' });
-        objectStore.createIndex('name', 'name', { unique: false });
-        console.log('Database setup complete');
-      };
-
-      request.onsuccess = function(event) {
-        const db = event.target.result;
-        console.log('Database opened successfully');
-      };
-    }
-
-    initDatabase();
-  </script>
 </body>
 </html>
