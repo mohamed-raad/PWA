@@ -29,7 +29,10 @@
         .btn-ai { @apply bg-purple-600 hover:bg-purple-700 text-white; }
         .btn-warning { @apply bg-amber-500 hover:bg-amber-600 text-white; }
 
-        .option-btn { @apply w-full text-left p-4 my-2 rounded-lg border border-slate-600 hover:bg-slate-700 transition-colors duration-200; }
+        /* Updated option-btn style */
+        .option-btn { 
+            @apply w-full text-left p-4 my-3 rounded-lg border border-slate-600 bg-slate-800 hover:bg-slate-700 shadow-md transition-all duration-200; 
+        }
         .option-btn.selected { @apply ring-2 ring-sky-400; }
         .option-btn.correct { @apply bg-green-700 border-green-500 text-white; }
         .option-btn.incorrect { @apply bg-red-700 border-red-500 text-white; }
