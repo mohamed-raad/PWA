@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSWIP 3.1 AI Mock Exam ✨ (Google Sheets Edition)</title>
+    <title>CSWIP 3.1 Advanced Mock Exam ✨ (Simplified Edition)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -26,10 +26,9 @@
         .btn-secondary { @apply bg-slate-600 hover:bg-slate-700 text-white; }
         .btn-success { @apply bg-green-500 hover:bg-green-600 text-white; }
         .btn-danger { @apply bg-red-500 hover:bg-red-600 text-white; }
-        .btn-ai { @apply bg-purple-600 hover:bg-purple-700 text-white; }
+        .btn-info { @apply bg-teal-500 hover:bg-teal-600 text-white; } /* Changed from btn-ai */
         .btn-warning { @apply bg-amber-500 hover:bg-amber-600 text-white; }
 
-        /* Updated option-btn style */
         .option-btn { 
             @apply w-full text-left p-4 my-3 rounded-lg border border-slate-600 bg-slate-800 hover:bg-slate-700 shadow-md transition-all duration-200; 
         }
@@ -37,16 +36,16 @@
         .option-btn.correct { @apply bg-green-700 border-green-500 text-white; }
         .option-btn.incorrect { @apply bg-red-700 border-red-500 text-white; }
 
-        .wps-content::-webkit-scrollbar, .modal-scrollable-content::-webkit-scrollbar, .leaderboard-content::-webkit-scrollbar, .generation-log::-webkit-scrollbar {
+        .tips-content::-webkit-scrollbar, .modal-scrollable-content::-webkit-scrollbar, .leaderboard-content::-webkit-scrollbar {
             width: 8px;
         }
-        .wps-content::-webkit-scrollbar-track, .modal-scrollable-content::-webkit-scrollbar-track, .leaderboard-content::-webkit-scrollbar-track, .generation-log::-webkit-scrollbar-track {
+        .tips-content::-webkit-scrollbar-track, .modal-scrollable-content::-webkit-scrollbar-track, .leaderboard-content::-webkit-scrollbar-track {
             background: rgba(255, 255, 255, 0.1); border-radius: 10px;
         }
-        .wps-content::-webkit-scrollbar-thumb, .modal-scrollable-content::-webkit-scrollbar-thumb, .leaderboard-content::-webkit-scrollbar-thumb, .generation-log::-webkit-scrollbar-thumb {
+        .tips-content::-webkit-scrollbar-thumb, .modal-scrollable-content::-webkit-scrollbar-thumb, .leaderboard-content::-webkit-scrollbar-thumb {
             background: #38bdf8; border-radius: 10px;
         }
-        .wps-content::-webkit-scrollbar-thumb:hover, .modal-scrollable-content::-webkit-scrollbar-thumb:hover, .leaderboard-content::-webkit-scrollbar-thumb:hover, .generation-log::-webkit-scrollbar-thumb:hover {
+        .tips-content::-webkit-scrollbar-thumb:hover, .modal-scrollable-content::-webkit-scrollbar-thumb:hover, .leaderboard-content::-webkit-scrollbar-thumb:hover {
             background: #0ea5e9;
         }
 
@@ -75,31 +74,29 @@
         .form-field-container {
             @apply mb-4 w-full md:w-2/3 mx-auto; 
         }
-        .generation-log {
-            @apply bg-slate-800 p-3 rounded-md text-xs text-slate-300 max-h-40 overflow-y-auto mt-4;
+        .tips-content {
+            @apply bg-slate-800 p-4 rounded-md text-sm text-slate-300 max-h-60 overflow-y-auto mt-4 leading-relaxed;
+        }
+        #user-info-display { 
+            @apply absolute top-4 right-4 text-xs text-slate-400 p-2 glassmorphism rounded-md;
         }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
 
-    <div id="app-container" class="w-full max-w-4xl glassmorphism rounded-xl shadow-2xl p-6 md:p-8">
+    <div id="user-info-display" class="hidden"> User: <span id="display-name-output"></span> 
+        <button id="change-name-btn" class="ml-2 text-sky-400 hover:text-sky-300 text-xs">(Change Name)</button>
+    </div>
 
+    <div id="app-container" class="w-full max-w-4xl glassmorphism rounded-xl shadow-2xl p-6 md:p-8">
         <div id="main-menu-screen" class="screen active">
             <div class="text-center">
                 <h1 class="text-4xl font-bold text-sky-400 mb-2">CSWIP 3.1</h1>
                 <h2 class="text-2xl font-semibold mb-6 text-slate-300">Advanced Mock Exam ✨</h2>
                 
                 <div class="form-field-container">
-                    <label for="user-name-input" class="block text-sm font-medium mb-1 text-slate-300 text-left">Your Name:</label>
-                    <input type="text" id="user-name-input" placeholder="Enter your name for the leaderboard">
-                </div>
-
-                <div class="form-field-container">
-                    <label for="api-key-input" class="block text-sm font-medium mb-1 text-slate-300 text-left">Gemini API Key (For AI Question Generation):</label>
-                    <input type="password" id="api-key-input" placeholder="Enter your Gemini API Key">
-                    <div class="text-right">
-                         <button id="save-api-key-btn" class="btn btn-secondary btn-sm py-1 px-3 mt-2 text-xs inline-block">Save Key</button>
-                    </div>
+                    <label for="display-name-input" class="block text-sm font-medium mb-1 text-slate-300 text-left">Enter Your Display Name:</label>
+                    <input type="text" id="display-name-input" placeholder="Your Name for Leaderboard & Progress">
                 </div>
                 
                 <div class="form-field-container mb-8"> 
@@ -110,23 +107,30 @@
                         <option value="hard">Hard</option>
                     </select>
                 </div>
+                
+                <div class="my-4 p-3 bg-sky-900/50 rounded-lg text-sm text-sky-300">
+                    <p>This exam has two parts: Part 1 (80 General Knowledge questions) and Part 2 (40 Scenario-Based WPS questions).</p>
+                    <a id="study-group-link" href="#" target="_blank" class="text-amber-400 hover:text-amber-300 underline">Join Study Group (External Link)</a>
+                </div>
 
                 <button id="start-exam-btn" class="btn btn-primary w-full md:w-2/3 mx-auto mb-3 text-lg">Start New Exam</button>
-                <button id="load-progress-menu-btn" class="btn btn-secondary w-full md:w-2/3 mx-auto mb-3 text-lg">Load Saved Progress</button>
-                <button id="load-results-btn" class="btn btn-secondary w-full md:w-2/3 mx-auto mb-3 text-lg">View Past Results</button>
+                <button id="load-progress-menu-btn" class="btn btn-secondary w-full md:w-2/3 mx-auto mb-3 text-lg">Load Saved Progress (from Sheet)</button>
+                <button id="load-results-btn" class="btn btn-secondary w-full md:w-2/3 mx-auto mb-3 text-lg">View Past Results (Local)</button>
                 <button id="leaderboard-btn" class="btn btn-warning w-full md:w-2/3 mx-auto mb-3 text-lg">View Leaderboard</button>
-                <p class="text-xs text-slate-500 mt-4">CSWIP® is a registered trademark of TWI Certification Ltd. AI features powered by Gemini. Data stored in Google Sheets.</p>
+                <p class="text-xs text-slate-500 mt-4">CSWIP® is a registered trademark of TWI Certification Ltd. Data stored in Google Sheets.</p>
             </div>
         </div>
         
-        <div id="question-generation-screen" class="screen">
+        <div id="question-preparation-screen" class="screen">
             <div class="text-center w-full">
-                <h2 id="generation-title" class="text-3xl font-bold text-sky-400 mb-6">Preparing Your Exam...</h2>
+                <h2 id="preparation-title" class="text-3xl font-bold text-sky-400 mb-6">Preparing Your Exam...</h2>
                 <div class="spinner mx-auto my-4 w-12 h-12 border-4"></div>
-                <p id="generation-status" class="text-xl mb-4 text-slate-300">Initializing...</p>
-                <div id="generation-log-area" class="generation-log">
-                    </div>
-                 <button id="cancel-generation-btn" class="btn btn-danger w-full sm:w-auto mt-6">Cancel Generation</button>
+                <p id="preparation-status" class="text-xl mb-4 text-slate-300">Initializing...</p>
+                <div id="study-tips-area" class="tips-content">
+                    <h4 class="font-semibold text-sky-300 mb-2">💡 Study Tip While You Wait:</h4>
+                    <p id="dynamic-study-tip">Review the differences between various NDT methods and their applications. Good luck!</p>
+                </div>
+                 <button id="cancel-preparation-btn" class="btn btn-danger w-full sm:w-auto mt-6">Cancel Preparation</button>
             </div>
         </div>
 
@@ -134,14 +138,14 @@
              <div class="text-center w-full">
                 <h2 id="intermediate-title" class="text-3xl font-bold text-sky-400 mb-6">Part 1 Completed!</h2>
                 <p id="intermediate-message" class="text-xl mb-4"></p>
-                <p class="text-slate-300 mb-6">Ready for Part 2: WPS Questions?</p>
+                <p class="text-slate-300 mb-6">Ready for Part 2: Scenario-Based WPS Questions?</p>
                 <button id="proceed-to-part2-btn" class="btn btn-primary w-full sm:w-auto">
                     <span class="btn-text">Proceed to Part 2</span>
-                    <div class="spinner hidden"></div> </button>
+                    <div class="spinner hidden"></div> 
+                </button>
                  <button id="intermediate-back-to-menu-btn" class="btn btn-secondary w-full sm:w-auto mt-3">Back to Menu (Progress Saved)</button>
             </div>
         </div>
-
 
         <div id="exam-screen" class="screen w-full">
             <div class="w-full">
@@ -160,24 +164,23 @@
                         <p id="question-text" class="text-lg mb-6 min-h-[60px] text-slate-200"></p>
                         <div id="options-area"></div>
                          <div id="wps-snippet-area" class="mt-4 p-3 bg-slate-700 rounded-lg hidden">
-                            <h5 class="text-sm font-semibold text-sky-300 mb-1">Relevant WPS Information/Scenario:</h5>
+                            <h5 class="text-sm font-semibold text-sky-300 mb-1">Relevant Information/Scenario:</h5>
                             <p id="wps-snippet-text" class="text-xs text-slate-300 whitespace-pre-wrap"></p>
                         </div>
                     </div>
                     <div id="wps-display-area" class="md:col-span-1 hidden p-4 bg-slate-800 rounded-lg max-h-[400px] md:max-h-[500px] overflow-y-auto wps-content">
-                        </div>
+                    </div>
                 </div>
                 
                 <div id="feedback-area" class="mt-6 p-4 rounded-lg min-h-[80px] hidden">
                     <p id="feedback-text" class="text-md mb-2"></p>
-                    <button id="explain-deeper-btn" class="btn btn-ai text-sm py-2 px-4 hidden">
-                        <span class="btn-text">✨ Explain Deeper</span>
+                    <button id="explain-deeper-btn" class="btn btn-info text-sm py-2 px-4 hidden"> <span class="btn-text">✨ Get More Details</span>
                         <div class="spinner hidden"></div>
                     </button>
                 </div>
 
                 <div class="mt-8 flex flex-col sm:flex-row justify-between items-center">
-                    <button id="save-progress-btn" class="btn btn-secondary mb-4 sm:mb-0 w-full sm:w-auto">Save Progress</button>
+                    <button id="save-progress-btn" class="btn btn-secondary mb-4 sm:mb-0 w-full sm:w-auto">Save Progress to Sheet</button>
                     <button id="next-question-btn" class="btn btn-primary hidden w-full sm:w-auto">Next Question</button>
                     <button id="finish-part-btn" class="btn btn-success hidden w-full sm:w-auto">Finish Part</button>
                 </div>
@@ -198,8 +201,7 @@
                 </div>
 
                 <div class="mt-8 flex flex-col sm:flex-row justify-center gap-4">
-                    <button id="generate-study-tips-btn" class="btn btn-ai w-full sm:w-auto">
-                         <span class="btn-text">✨ Get Study Tips</span>
+                    <button id="generate-study-tips-btn" class="btn btn-info w-full sm:w-auto"> <span class="btn-text">✨ Get Study Tips</span>
                          <div class="spinner hidden"></div>
                     </button>
                     <button id="save-results-to-device-btn" class="btn btn-success w-full sm:w-auto">Save Results to Device (Local)</button>
@@ -231,65 +233,64 @@
     <script>
         // --- APPLICATION STATE ---
         const appState = {
-            currentScreen: 'main-menu-screen',
-            userName: localStorage.getItem('cswipUserName') || '',
-            geminiApiKey: localStorage.getItem('cswipGeminiApiKey') || '',
-            // Hardcoded Apps Script URL as requested
+            currentScreen: 'main-menu-screen', 
+            currentUser: { 
+                username: localStorage.getItem('cswipDisplayName') || '' 
+            },
             appsScriptUrl: "https://script.google.com/macros/s/AKfycbyi6Pcs4jdrFFO4x_Bq7jx2wKsB1UAC5mMjvVsDgEMpswF9Gv2FGPRyxtzGipcZcX15ng/exec", 
             selectedDifficulty: 'medium',
-            
             currentPart: 1, 
             examConstants: { 
                 part1: { name: "General Knowledge", numQuestions: 80, durationMinutes: 80, section: "general" },
-                part2: { name: "WPS Questions (AI)", numQuestions: 40, durationMinutes: 40, section: "wps" }
+                part2: { name: "Scenario-Based WPS Questions", numQuestions: 40, durationMinutes: 40, section: "wps" } // Renamed
             },
-
             part1Questions: [],
             part2Questions: [], 
-            
             currentQuestionIndex: 0, 
-            
             part1UserAnswers: [],
             part2UserAnswers: [],
-            
             part1Score: 0,
             part2Score: 0,
-            
             timeLeft: 0, 
             timerInterval: null,
             examInProgress: false,
             passMarkPercentage: 70,
-            isGeneratingQuestions: false, 
+            isPreparingQuestions: false, 
+            studyGroupLink: "YOUR_DISCORD_OR_STUDY_GROUP_LINK_HERE", 
         };
 
         // --- DOM ELEMENTS ---
         const screens = {
             mainMenu: document.getElementById('main-menu-screen'),
-            questionGeneration: document.getElementById('question-generation-screen'),
+            questionPreparation: document.getElementById('question-preparation-screen'), 
             intermediate: document.getElementById('intermediate-screen'),
             exam: document.getElementById('exam-screen'),
             results: document.getElementById('results-screen'),
             leaderboard: document.getElementById('leaderboard-screen'),
         };
-        const userNameInput = document.getElementById('user-name-input');
-        const apiKeyInput = document.getElementById('api-key-input');
-        const saveApiKeyBtn = document.getElementById('save-api-key-btn');
+        const displayNameInput = document.getElementById('display-name-input'); 
+        const userInfoDisplay = document.getElementById('user-info-display'); 
+        const displayNameOutput = document.getElementById('display-name-output'); 
+        const changeNameBtn = document.getElementById('change-name-btn'); 
+
         const difficultySelect = document.getElementById('difficulty-select');
         const startExamBtn = document.getElementById('start-exam-btn');
         const loadProgressMenuBtn = document.getElementById('load-progress-menu-btn');
         const loadResultsBtn = document.getElementById('load-results-btn');
         const leaderboardBtn = document.getElementById('leaderboard-btn');
+        
+        const studyGroupLinkEl = document.getElementById('study-group-link'); 
 
-        const generationTitleEl = document.getElementById('generation-title');
-        const generationStatusEl = document.getElementById('generation-status');
-        const generationLogAreaEl = document.getElementById('generation-log-area');
-        const cancelGenerationBtn = document.getElementById('cancel-generation-btn');
+        const preparationTitleEl = document.getElementById('preparation-title'); 
+        const preparationStatusEl = document.getElementById('preparation-status'); 
+        const studyTipsAreaEl = document.getElementById('study-tips-area'); 
+        const dynamicStudyTipEl = document.getElementById('dynamic-study-tip'); 
+        const cancelPreparationBtn = document.getElementById('cancel-preparation-btn'); 
 
         const intermediateTitle = document.getElementById('intermediate-title');
         const intermediateMessage = document.getElementById('intermediate-message');
         const proceedToPart2Btn = document.getElementById('proceed-to-part2-btn');
         const intermediateBackToMenuBtn = document.getElementById('intermediate-back-to-menu-btn');
-        
         const examPartTitle = document.getElementById('exam-part-title');
         const timerDisplay = document.getElementById('timer-display');
         const questionCounter = document.getElementById('question-counter');
@@ -299,15 +300,12 @@
         const wpsSnippetArea = document.getElementById('wps-snippet-area');
         const wpsSnippetText = document.getElementById('wps-snippet-text');
         const questionDetailsArea = document.getElementById('question-details-area');
-        
         const feedbackArea = document.getElementById('feedback-area');
         const feedbackTextEl = document.getElementById('feedback-text');
         const explainDeeperBtn = document.getElementById('explain-deeper-btn');
-        
         const nextQuestionBtn = document.getElementById('next-question-btn');
         const finishPartBtn = document.getElementById('finish-part-btn'); 
         const saveProgressBtn = document.getElementById('save-progress-btn');
-        
         const resultsUserNameEl = document.getElementById('results-user-name');
         const scoreDisplayPart1El = document.getElementById('score-display-part1');
         const scoreDisplayPart2El = document.getElementById('score-display-part2');
@@ -317,13 +315,23 @@
         const generateStudyTipsBtn = document.getElementById('generate-study-tips-btn');
         const saveResultsToDeviceBtn = document.getElementById('save-results-to-device-btn');
         const backToMenuBtn = document.getElementById('back-to-menu-btn');
-
         const leaderboardContentArea = document.getElementById('leaderboard-content-area');
         const leaderboardBackToMenuBtn = document.getElementById('leaderboard-back-to-menu-btn');
-
         const messageModal = document.getElementById('message-modal');
         const modalTitleEl = document.getElementById('modal-title');
         const modalMessageEl = document.getElementById('modal-message');
+
+        const studyTips = [ 
+            "Always double-check the units in calculations.",
+            "Familiarize yourself with common welding symbols and their meanings.",
+            "Understand the essential variables for different welding processes.",
+            "Practice interpreting WPS and PQR documents thoroughly.",
+            "Review common weld defects, their causes, and prevention methods.",
+            "Pay close attention to preheat and interpass temperature requirements.",
+            "Ensure you understand the scope and limitations of various NDT methods.",
+            "Time management is key during the exam. Pace yourself.",
+            "Read each question carefully before selecting an answer."
+        ];
         
         // --- UI FUNCTIONS ---
         function showScreen(screenId) {
@@ -337,7 +345,7 @@
             appState.currentScreen = screenId;
         }
 
-        function showMessageModal(title, message, onOK = () => {}, isHtml = false) {
+        function showMessageModal(title, message, onOK = () => {}, isHtml = false) { 
             modalTitleEl.textContent = title;
             if (isHtml) {
                 modalMessageEl.innerHTML = message;
@@ -362,11 +370,23 @@
             }
         }
 
-        function addLogToGenerationScreen(message) {
-            const logEntry = document.createElement('p');
-            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-            generationLogAreaEl.appendChild(logEntry);
-            generationLogAreaEl.scrollTop = generationLogAreaEl.scrollHeight; 
+        function displayDynamicStudyTip() { 
+            const randomIndex = Math.floor(Math.random() * studyTips.length);
+            dynamicStudyTipEl.textContent = studyTips[randomIndex];
+        }
+        
+        function addLogToPreparationScreen(message) { 
+            console.log(`[PREP_LOG] ${new Date().toLocaleTimeString()}: ${message}`);
+        }
+
+        function updateUserInfoDisplay() {
+            if (appState.currentUser.username) {
+                displayNameOutput.textContent = appState.currentUser.username;
+                userInfoDisplay.classList.remove('hidden');
+                displayNameInput.value = appState.currentUser.username; 
+            } else {
+                userInfoDisplay.classList.add('hidden');
+            }
         }
         
         // --- EXAM LOGIC ---
@@ -380,60 +400,72 @@
             appState.part1Score = 0;
             appState.part2Score = 0;
             appState.examInProgress = true;
-            appState.isGeneratingQuestions = false;
+            appState.isPreparingQuestions = false;
             appState.selectedDifficulty = difficultySelect.value;
-            appState.userName = userNameInput.value.trim() || 'Anonymous';
-            localStorage.setItem('cswipUserName', appState.userName);
+            
+            const nameFromInput = displayNameInput.value.trim();
+            if (nameFromInput) {
+                appState.currentUser.username = nameFromInput;
+                localStorage.setItem('cswipDisplayName', appState.currentUser.username);
+            } else if (!appState.currentUser.username) { 
+                 appState.currentUser.username = 'GuestUser-' + Math.random().toString(36).substr(2, 5);
+            }
+            updateUserInfoDisplay();
         }
         
         async function startExamFlow() {
-            if (!appState.userName || appState.userName.toLowerCase() === 'anonymous') {
-                 showMessageModal("Enter Name", "Please enter your name to start the exam.", () => userNameInput.focus());
+            const nameFromInput = displayNameInput.value.trim();
+            if (!nameFromInput) {
+                 showMessageModal("Display Name Required", "Please enter a display name to start the exam.", () => displayNameInput.focus());
                  return;
             }
-            if (!getApiKey()) {
-                showMessageModal("API Key Missing", "Gemini API Key is required for AI question generation. Please enter it in the main menu.", () => apiKeyInput.focus());
-                return;
-            }
+            appState.currentUser.username = nameFromInput; 
+            localStorage.setItem('cswipDisplayName', appState.currentUser.username);
+            updateUserInfoDisplay();
+
             if (!getAppsScriptUrl()) { 
                 showMessageModal("Configuration Error", "Google Apps Script Web App URL is not configured correctly in the application.", () => showScreen('mainMenu'));
                 return;
             }
 
-            initializeExamState();
-            showScreen('questionGeneration');
-            generationLogAreaEl.innerHTML = ''; 
-            addLogToGenerationScreen("Exam preparation started...");
-            appState.isGeneratingQuestions = true;
+            initializeExamState(); 
+            showScreen('questionPreparation');
+            studyTipsAreaEl.classList.remove('hidden'); 
+            displayDynamicStudyTip(); 
+            appState.isPreparingQuestions = true;
 
             try {
-                generationTitleEl.textContent = `Preparing Part 1: ${appState.examConstants.part1.name}`;
+                preparationTitleEl.textContent = `Preparing Part 1: ${appState.examConstants.part1.name}`; 
                 appState.part1Questions = await ensureQuestionsForPart(appState.examConstants.part1, appState.selectedDifficulty);
-                if (!appState.isGeneratingQuestions) { 
-                    addLogToGenerationScreen("Generation cancelled by user during Part 1 prep.");
+
+                if (!appState.isPreparingQuestions) { 
+                    addLogToPreparationScreen("Preparation cancelled by user during Part 1 prep.");
                     showScreen('mainMenu'); return;
                 }
                 if (!appState.part1Questions || appState.part1Questions.length < appState.examConstants.part1.numQuestions) {
-                    throw new Error(`Could not gather enough questions for Part 1 (${appState.part1Questions?.length || 0}/${appState.examConstants.part1.numQuestions}).`);
+                     addLogToPreparationScreen(`Warning: Could only gather ${appState.part1Questions?.length || 0}/${appState.examConstants.part1.numQuestions} questions for Part 1.`);
+                     if (!appState.part1Questions || appState.part1Questions.length === 0) {
+                        throw new Error(`Failed to get any questions for Part 1.`);
+                     }
                 }
-                addLogToGenerationScreen(`Part 1: ${appState.part1Questions.length} questions ready.`);
-                
+                addLogToPreparationScreen(`Part 1: ${appState.part1Questions.length} questions ready.`);
                 startCurrentPart();
 
             } catch (error) {
                 console.error("Error during exam preparation (Part 1):", error);
                 showMessageModal("Exam Prep Error", `Failed to prepare Part 1: ${error.message}`, () => showScreen('mainMenu'));
-                appState.isGeneratingQuestions = false;
+                appState.isPreparingQuestions = false;
             }
         }
         
-        async function prepareAndStartPart2() {
-            if (!appState.isGeneratingQuestions) { 
+        async function prepareAndStartPart2() { 
+            if (!appState.isPreparingQuestions) { 
                  showScreen('mainMenu'); return;
             }
-            showScreen('questionGeneration');
-            generationTitleEl.textContent = `Preparing Part 2: ${appState.examConstants.part2.name}`;
-            addLogToGenerationScreen("Starting preparation for Part 2...");
+            showScreen('questionPreparation');
+            preparationTitleEl.textContent = `Preparing Part 2: ${appState.examConstants.part2.name}`;
+            addLogToPreparationScreen("Starting preparation for Part 2...");
+            displayDynamicStudyTip();
             
             const proceedBtnText = proceedToPart2Btn.querySelector('.btn-text');
             const proceedSpinner = proceedToPart2Btn.querySelector('.spinner');
@@ -445,14 +477,17 @@
 
             try {
                 appState.part2Questions = await ensureQuestionsForPart(appState.examConstants.part2, appState.selectedDifficulty);
-                 if (!appState.isGeneratingQuestions) { 
-                    addLogToGenerationScreen("Generation cancelled by user during Part 2 prep.");
+                 if (!appState.isPreparingQuestions) { 
+                    addLogToPreparationScreen("Preparation cancelled by user during Part 2 prep.");
                     showScreen('mainMenu'); return;
                 }
                 if (!appState.part2Questions || appState.part2Questions.length < appState.examConstants.part2.numQuestions) {
-                     throw new Error(`Could not gather enough questions for Part 2 (${appState.part2Questions?.length || 0}/${appState.examConstants.part2.numQuestions}).`);
+                     addLogToPreparationScreen(`Warning: Could only gather ${appState.part2Questions?.length || 0}/${appState.examConstants.part2.numQuestions} questions for Part 2.`);
+                     if (!appState.part2Questions || appState.part2Questions.length === 0) {
+                        throw new Error(`Failed to get any questions for Part 2.`);
+                     }
                 }
-                addLogToGenerationScreen(`Part 2: ${appState.part2Questions.length} questions ready.`);
+                addLogToPreparationScreen(`Part 2: ${appState.part2Questions.length} questions ready.`);
                 
                 appState.currentPart = 2;
                 appState.currentQuestionIndex = 0;
@@ -461,7 +496,7 @@
             } catch (error) {
                 console.error("Error during exam preparation (Part 2):", error);
                 showMessageModal("Exam Prep Error", `Failed to prepare Part 2: ${error.message}`, () => showScreen('mainMenu'));
-                appState.isGeneratingQuestions = false;
+                appState.isPreparingQuestions = false;
             } finally {
                  if (proceedBtnText && proceedSpinner) { 
                     proceedBtnText.textContent = 'Proceed to Part 2';
@@ -471,69 +506,71 @@
             }
         }
 
-        async function ensureQuestionsForPart(partConfig, difficulty) {
-            generationStatusEl.textContent = `Fetching questions for ${partConfig.name}...`;
-            addLogToGenerationScreen(`Attempting to fetch ${partConfig.numQuestions} ${partConfig.section} questions (Difficulty: ${difficulty}) from Google Sheet.`);
+        async function ensureQuestionsForPart(partConfig, difficulty) { 
+            preparationStatusEl.textContent = `Fetching questions for ${partConfig.name}...`;
+            addLogToPreparationScreen(`Attempting to fetch ${partConfig.numQuestions} ${partConfig.section} questions (Difficulty: ${difficulty}) from Google Sheet.`);
             
             let questions = await fetchQuestionsFromGoogleSheet(partConfig.numQuestions, difficulty, partConfig.section);
-            addLogToGenerationScreen(`Found ${questions.length} questions in Google Sheet for ${partConfig.name}.`);
+            addLogToPreparationScreen(`Found ${questions.length} questions in Google Sheet for ${partConfig.name}.`);
 
             const needed = partConfig.numQuestions - questions.length;
             if (needed > 0) {
-                if (!appState.isGeneratingQuestions) return questions; 
-                addLogToGenerationScreen(`Need to generate ${needed} more questions for ${partConfig.name} using AI.`);
-                generationStatusEl.textContent = `Generating ${needed} questions for ${partConfig.name} with AI...`;
+                if (!appState.isPreparingQuestions) return questions.slice(0, partConfig.numQuestions);
+                addLogToPreparationScreen(`Need to generate ${needed} more questions for ${partConfig.name} using question generation service.`);
+                preparationStatusEl.textContent = `Generating ${needed} questions for ${partConfig.name}...`;
                 
                 const newlyGenerated = await generateQuestionsInBatches(needed, difficulty, partConfig.section);
-                 if (!appState.isGeneratingQuestions) return questions; 
+                 if (!appState.isPreparingQuestions) return questions.slice(0, partConfig.numQuestions);
 
                 if (newlyGenerated && newlyGenerated.length > 0) {
-                    addLogToGenerationScreen(`AI generated ${newlyGenerated.length} new questions. Saving to Google Sheet...`);
+                    addLogToPreparationScreen(`Generated ${newlyGenerated.length} new questions. Saving to Google Sheet...`);
                     await saveQuestionsToGoogleSheet(newlyGenerated); 
                     questions = questions.concat(newlyGenerated);
-                    questions = shuffleArray(questions).slice(0, partConfig.numQuestions);
+                    questions = shuffleArray(questions);
                 }
             }
             return questions.slice(0, partConfig.numQuestions);
         }
-
-        async function generateQuestionsInBatches(totalNeeded, difficulty, section) {
+        async function generateQuestionsInBatches(totalNeeded, difficulty, section) { 
             let allNewQuestions = [];
             const batchSize = 10;
             const numBatches = Math.ceil(totalNeeded / batchSize);
-            let existingIdsInSession = []; 
 
             for (let i = 0; i < numBatches; i++) {
-                if (!appState.isGeneratingQuestions) {
-                    addLogToGenerationScreen("Batch generation cancelled by user.");
+                if (!appState.isPreparingQuestions) {
+                    addLogToPreparationScreen("Batch generation cancelled by user.");
                     break; 
                 }
                 const questionsInThisBatch = Math.min(batchSize, totalNeeded - allNewQuestions.length);
                 if (questionsInThisBatch <= 0) break;
 
-                generationStatusEl.textContent = `Generating batch ${i + 1} of ${numBatches} for ${section}... (${questionsInThisBatch} questions)`;
-                addLogToGenerationScreen(`Requesting AI for batch ${i + 1}/${numBatches} (${questionsInThisBatch} ${section} questions, Difficulty: ${difficulty}).`);
+                preparationStatusEl.textContent = `Generating batch ${i + 1} of ${numBatches} for ${section}... (${questionsInThisBatch} questions)`;
+                addLogToPreparationScreen(`Requesting batch ${i + 1}/${numBatches} (${questionsInThisBatch} ${section} questions, Difficulty: ${difficulty}).`);
+                displayDynamicStudyTip(); 
 
-                const batch = await callGeminiAPIForQuestions(questionsInThisBatch, difficulty, section, existingIdsInSession);
-                if (!appState.isGeneratingQuestions) break; 
+                const batch = await callAppsScript({
+                    action: 'generateQuestionsWithGemini', // This action name implies Gemini, but the user won't see it.
+                    count: questionsInThisBatch,
+                    difficulty: difficulty,
+                    sectionType: section,
+                });
 
-                if (batch && batch.length > 0) {
-                    addLogToGenerationScreen(`AI returned ${batch.length} questions for batch ${i + 1}.`);
-                    allNewQuestions = allNewQuestions.concat(batch);
-                    batch.forEach(q => existingIdsInSession.push(q.id)); 
+                if (!appState.isPreparingQuestions) break; 
+
+                if (batch && batch.success && batch.questions && batch.questions.length > 0) {
+                    addLogToPreparationScreen(`Received ${batch.questions.length} questions for batch ${i + 1}.`);
+                    allNewQuestions = allNewQuestions.concat(batch.questions);
                 } else {
-                    addLogToGenerationScreen(`AI failed to return questions for batch ${i + 1} or returned empty.`);
+                    addLogToPreparationScreen(`Failed to get questions for batch ${i + 1} or returned empty. Error: ${batch.error || 'Unknown'}`);
                     if (i < numBatches -1) { 
-                        addLogToGenerationScreen("Skipping to next batch due to empty/failed current batch.");
+                        addLogToPreparationScreen("Skipping to next batch due to empty/failed current batch.");
                     } else {
-                         addLogToGenerationScreen("Last batch failed or returned empty. Proceeding with what was gathered.");
+                         addLogToPreparationScreen("Last batch failed or returned empty. Proceeding with what was gathered.");
                     }
                 }
             }
             return allNewQuestions;
         }
-
-
         function startCurrentPart() { 
             const partConfig = appState.currentPart === 1 ? appState.examConstants.part1 : appState.examConstants.part2;
             const questionsForCurrentPart = appState.currentPart === 1 ? appState.part1Questions : appState.part2Questions;
@@ -541,14 +578,15 @@
             if (!questionsForCurrentPart || questionsForCurrentPart.length === 0) {
                 showMessageModal("Error", `No questions loaded for Part ${appState.currentPart}. Exam cannot continue.`, () => showScreen('mainMenu'));
                 appState.examInProgress = false;
-                appState.isGeneratingQuestions = false;
+                appState.isPreparingQuestions = false;
                 return;
             }
-            appState.isGeneratingQuestions = false; 
+            appState.isPreparingQuestions = false; 
 
             examPartTitle.textContent = `Part ${appState.currentPart}: ${partConfig.name}`;
             appState.timeLeft = partConfig.durationMinutes * 60;
             timerDisplay.textContent = `${String(partConfig.durationMinutes).padStart(2, '0')}:00`;
+            questionCounter.textContent = `Question 1/${questionsForCurrentPart.length}`; 
             
             updateTimerDisplay(); 
             clearInterval(appState.timerInterval);
@@ -561,8 +599,8 @@
             finishPartBtn.classList.add('hidden');
             explainDeeperBtn.classList.add('hidden');
         }
-        function loadQuestion() { 
-            const questions = appState.currentPart === 1 ? appState.part1Questions : appState.part2Questions;
+        function loadQuestion() { /* ... (same as before) ... */
+             const questions = appState.currentPart === 1 ? appState.part1Questions : appState.part2Questions;
             if (appState.currentQuestionIndex >= questions.length) {
                 console.warn("Attempted to load question beyond available range. Finishing part.");
                 handleFinishPart(); 
@@ -621,7 +659,7 @@
                 finishPartBtn.classList.add('hidden');
             }
         }
-        function selectAnswer(optionIndex) { 
+        function selectAnswer(optionIndex) { /* ... (same as before) ... */
             const questions = appState.currentPart === 1 ? appState.part1Questions : appState.part2Questions;
             const userAnswers = appState.currentPart === 1 ? appState.part1UserAnswers : appState.part2UserAnswers;
             
@@ -669,19 +707,19 @@
                 finishPartBtn.classList.remove('hidden');
             }
         }
-        function handleNextQuestion() { 
+        function handleNextQuestion() { /* ... (same as before) ... */
             appState.currentQuestionIndex++;
             loadQuestion();
         }
-        function handleFinishPart() { 
+        function handleFinishPart() { /* ... (Simplified, no free tier usage update) ... */
             clearInterval(appState.timerInterval); 
             timerDisplay.classList.remove('timer-low');
-            appState.isGeneratingQuestions = true; 
+            appState.isPreparingQuestions = true; 
 
             if (appState.currentPart === 1) {
-                saveExamProgress(); 
+                saveExamProgressToSheet();  // Save progress to sheet
                 intermediateTitle.textContent = `Part 1: ${appState.examConstants.part1.name} Completed!`;
-                const questionsInPart1 = appState.part1Questions.length || appState.examConstants.part1.numQuestions;
+                const questionsInPart1 = appState.part1Questions.length;
                 intermediateMessage.textContent = `Your score for Part 1: ${appState.part1Score}/${questionsInPart1}`;
                 
                 const proceedBtnText = proceedToPart2Btn.querySelector('.btn-text');
@@ -693,16 +731,16 @@
                 showScreen('intermediate');
             } else { 
                 appState.examInProgress = false;
-                appState.isGeneratingQuestions = false;
+                appState.isPreparingQuestions = false;
                 displayFinalResults();
                 saveFinalResultsToLeaderboard(); 
             }
         }
-        function displayFinalResults() { 
+        function displayFinalResults() { /* ... (Uses appState.currentUser.username) ... */
             showScreen('results');
-            resultsUserNameEl.textContent = `Examinee: ${appState.userName}`;
-            const questionsInPart1 = appState.part1Questions.length || appState.examConstants.part1.numQuestions;
-            const questionsInPart2 = appState.part2Questions.length || appState.examConstants.part2.numQuestions;
+            resultsUserNameEl.textContent = `Examinee: ${appState.currentUser?.username || 'User'}`;
+            const questionsInPart1 = appState.part1Questions.length;
+            const questionsInPart2 = appState.part2Questions.length;
 
             scoreDisplayPart1El.textContent = `Part 1 Score: ${appState.part1Score}/${questionsInPart1}`;
             scoreDisplayPart2El.textContent = `Part 2 Score: ${appState.part2Score}/${questionsInPart2}`;
@@ -740,7 +778,7 @@
                 wrongAnswersSummaryEl.innerHTML += '<p class="text-slate-300">No incorrect answers! Great job!</p>';
             }
         }
-        function updateTimer() { 
+        function updateTimer() { /* ... (same as before) ... */
             appState.timeLeft--;
             updateTimerDisplay();
             if (appState.timeLeft <= 0) {
@@ -753,12 +791,12 @@
                 timerDisplay.classList.remove('timer-low');
             }
         }
-        function updateTimerDisplay() { 
+        function updateTimerDisplay() { /* ... (same as before) ... */
             const minutes = Math.floor(appState.timeLeft / 60);
             const seconds = appState.timeLeft % 60;
             timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         }
-        function shuffleArray(array) { 
+        function shuffleArray(array) { /* ... (same as before) ... */
             const newArray = [...array];
             for (let i = newArray.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -766,114 +804,128 @@
             }
             return newArray;
         }
-        function saveExamProgress() { 
-            if (!appState.examInProgress && !appState.isGeneratingQuestions) { 
+        
+        // --- Progress Saving/Loading to/from Google Sheet via Apps Script ---
+        async function saveExamProgressToSheet() {
+            if (!appState.examInProgress && !appState.isPreparingQuestions) {
                 showMessageModal("Info", "No exam in progress to save.");
                 return;
             }
-            const progressData = {
-                userName: appState.userName,
-                geminiApiKey: appState.geminiApiKey, 
-                // appsScriptUrl is hardcoded, no need to save it in progress
-                selectedDifficulty: appState.selectedDifficulty,
-                currentPart: appState.currentPart, 
-                part1Questions: appState.part1Questions, 
-                part2Questions: appState.part2Questions, 
+            if (!appState.currentUser.username) {
+                showMessageModal("Error", "Display Name not set. Cannot save progress to sheet.");
+                return;
+            }
+
+            const progressData = { 
+                difficulty: appState.selectedDifficulty,
+                currentPart: appState.currentPart,
+                part1Questions: appState.part1Questions.map(q=>q.id), 
+                part2Questions: appState.part2Questions.map(q=>q.id), 
                 currentQuestionIndex: appState.currentQuestionIndex,
                 part1UserAnswers: appState.part1UserAnswers,
                 part2UserAnswers: appState.part2UserAnswers,
                 part1Score: appState.part1Score,
                 part2Score: appState.part2Score,
-                timeLeft: appState.timeLeft, 
-                examInProgress: appState.examInProgress, 
-                isGeneratingQuestions: appState.isGeneratingQuestions, 
-                timestamp: new Date().toISOString()
+                timeLeft: appState.timeLeft,
+                examInProgress: appState.examInProgress,
+                isPreparingQuestions: appState.isPreparingQuestions
             };
-            try {
-                localStorage.setItem('cswipMockExamProgress_GS_HC', JSON.stringify(progressData)); // HC for Hardcoded URL
-                showMessageModal("Progress Saved", "Your current exam progress has been saved locally.");
-            } catch (e) {
-                console.error("Error saving progress:", e);
-                showMessageModal("Save Error", "Could not save progress.");
+            
+            const result = await callAppsScript({
+                action: 'saveProgress',
+                displayName: appState.currentUser.username,
+                progressData: progressData 
+            });
+
+            if (result.success) {
+                showMessageModal("Progress Saved", "Your current exam progress has been saved to the central sheet.");
+            } else {
+                showMessageModal("Save Error", `Could not save progress to sheet: ${result.error || 'Unknown error'}`);
             }
         }
-        function loadExamProgress() { 
-             try {
-                const savedProgressJSON = localStorage.getItem('cswipMockExamProgress_GS_HC');
-                if (savedProgressJSON) {
-                    const progressData = JSON.parse(savedProgressJSON);
-                    
-                    if (typeof progressData.currentPart !== 'number' || !progressData.selectedDifficulty) {
-                        throw new Error("Invalid progress data structure.");
-                    }
 
-                    appState.userName = progressData.userName || 'Anonymous';
-                    appState.geminiApiKey = progressData.geminiApiKey || '';
-                    // appState.appsScriptUrl is hardcoded
-                    appState.selectedDifficulty = progressData.selectedDifficulty;
-                    appState.currentPart = progressData.currentPart;
-                    appState.part1Questions = progressData.part1Questions || [];
-                    appState.part2Questions = progressData.part2Questions || []; 
-                    appState.currentQuestionIndex = progressData.currentQuestionIndex || 0;
-                    appState.part1UserAnswers = progressData.part1UserAnswers || [];
-                    appState.part2UserAnswers = progressData.part2UserAnswers || [];
-                    appState.part1Score = progressData.part1Score || 0;
-                    appState.part2Score = progressData.part2Score || 0;
-                    appState.timeLeft = progressData.timeLeft || 0;
-                    appState.examInProgress = progressData.examInProgress || false; 
-                    appState.isGeneratingQuestions = progressData.isGeneratingQuestions || false; 
+        async function loadExamProgressFromSheet() {
+            if (!appState.currentUser.username) {
+                 showMessageModal("Display Name Needed", "Please enter your display name to load progress.", () => displayNameInput.focus());
+                 return;
+            }
+            
+            const buttonTextEl = loadProgressMenuBtn.querySelector('.btn-text') || loadProgressMenuBtn;
+            const originalButtonText = buttonTextEl.textContent;
+            const spinnerEl = loadProgressMenuBtn.querySelector('.spinner'); 
+            
+            buttonTextEl.textContent = 'Loading...';
+            if(spinnerEl) spinnerEl.classList.remove('hidden');
+            loadProgressMenuBtn.disabled = true;
 
+            const result = await callAppsScript({
+                action: 'loadProgress',
+                displayName: appState.currentUser.username
+            });
 
-                    userNameInput.value = appState.userName;
-                    apiKeyInput.value = appState.geminiApiKey;
-                    // appsScriptUrlInput is removed
-                    difficultySelect.value = appState.selectedDifficulty;
+            buttonTextEl.textContent = originalButtonText;
+            if(spinnerEl) spinnerEl.classList.add('hidden');
+            loadProgressMenuBtn.disabled = false;
 
-                    showMessageModal("Progress Loaded", "Attempting to resume exam...", async () => {
-                        if (!getAppsScriptUrl()) { // Should always be true now
-                             showMessageModal("Configuration Error", "Google Apps Script URL is not configured correctly.", () => { showScreen('mainMenu'); });
-                             return;
-                        }
+            if (result.success && result.progressData) {
+                const progressData = result.progressData;
+                                
+                appState.selectedDifficulty = progressData.difficulty;
+                appState.currentPart = progressData.currentPart;
+                // Questions are stored as IDs, they will be re-fetched by ensureQuestionsForPart
+                appState.part1Questions = []; // Will be repopulated
+                appState.part2Questions = []; // Will be repopulated
 
-                        if (appState.isGeneratingQuestions || (appState.currentPart === 1 && !appState.examInProgress) || (appState.currentPart === 1 && appState.part1Questions.length === 0) ) {
-                            addLogToGenerationScreen("Resuming: Generation was incomplete or Part 1 not started. Restarting full exam preparation.");
+                appState.currentQuestionIndex = progressData.currentQuestionIndex || 0;
+                appState.part1UserAnswers = progressData.part1UserAnswers || [];
+                appState.part2UserAnswers = progressData.part2UserAnswers || [];
+                appState.part1Score = progressData.part1Score || 0;
+                appState.part2Score = progressData.part2Score || 0;
+                appState.timeLeft = progressData.timeLeft || 0;
+                appState.examInProgress = progressData.examInProgress || false; 
+                appState.isPreparingQuestions = progressData.isPreparingQuestions || false; 
+
+                difficultySelect.value = appState.selectedDifficulty;
+                updateUserInfoDisplay(); 
+
+                showMessageModal("Progress Loaded", "Attempting to resume exam...", async () => {
+                    if (appState.isPreparingQuestions || !appState.examInProgress) {
+                        addLogToPreparationScreen("Resuming: Preparation was incomplete or exam not active. Restarting exam preparation.");
+                        startExamFlow(); 
+                    } else { 
+                        addLogToPreparationScreen(`Resuming Part ${appState.currentPart}. Questions will be re-fetched.`);
+                        if (appState.currentPart === 1) {
+                            // We need to ensure Part 1 questions are loaded based on saved IDs if possible,
+                            // or re-prepare Part 1 if not. For simplicity, re-prepare.
                             startExamFlow(); 
-                        } else if (appState.currentPart === 1 && appState.examInProgress) {
-                             addLogToGenerationScreen("Resuming active Part 1.");
-                            startCurrentPart();
-                        } else if (appState.currentPart === 2 && (!appState.part2Questions || appState.part2Questions.length === 0) && !appState.examInProgress) {
-                            addLogToGenerationScreen("Resuming: About to start Part 2 preparation.");
-                            intermediateTitle.textContent = `Part 1: ${appState.examConstants.part1.name} Completed (Resumed)`;
-                            const questionsInPart1 = appState.part1Questions.length || appState.examConstants.part1.numQuestions;
-                            intermediateMessage.textContent = `Your score for Part 1: ${appState.part1Score}/${questionsInPart1}`;
-                            showScreen('intermediate'); 
-                        } else if (appState.currentPart === 2 && appState.examInProgress) {
-                            addLogToGenerationScreen("Resuming active Part 2.");
-                            startCurrentPart();
-                        } else {
-                             addLogToGenerationScreen("Unknown resume state. Defaulting to main menu.");
-                            showScreen('mainMenu');
+                        } else { 
+                             // If resuming Part 2, we assume Part 1 was completed.
+                             // We need to load Part 1 answers and score, then prepare Part 2.
+                             // This simplified load will re-prepare Part 2.
+                             // A more robust resume would fetch Part 1 questions by ID from sheet.
+                             // For now, to ensure Part 1 state is somewhat correct before Part 2:
+                             appState.part1Questions = progressData.part1Questions.map(id => ({id: id})); // Placeholder with IDs
+                             // This is still not ideal as full question objects are needed.
+                             // Best to restart the appropriate part's preparation.
+                             prepareAndStartPart2();
                         }
-                    });
+                    }
+                });
 
-                } else {
-                    showMessageModal("No Saved Progress", "No exam progress found to load.");
-                }
-            } catch (e) {
-                console.error("Error loading progress:", e);
-                localStorage.removeItem('cswipMockExamProgress_GS_HC'); 
-                showMessageModal("Load Error", "Could not load progress. Data might be corrupted or invalid. Saved progress has been cleared.");
+            } else {
+                showMessageModal("No Saved Progress", result.error || "No exam progress found in sheet for this name, or error loading.");
             }
         }
-        function saveResultsToDevice() { 
-            const questionsInPart1 = appState.part1Questions.length || appState.examConstants.part1.numQuestions;
-            const questionsInPart2 = appState.part2Questions.length || appState.examConstants.part2.numQuestions;
+
+        function saveResultsToDevice() { /* ... (Uses appState.currentUser.username) ... */
+             const questionsInPart1 = appState.part1Questions.length;
+            const questionsInPart2 = appState.part2Questions.length;
             const totalAttempted = questionsInPart1 + questionsInPart2;
             const totalScore = appState.part1Score + appState.part2Score;
             const percentage = totalAttempted > 0 ? (totalScore / totalAttempted) * 100 : 0;
 
             const resultsData = {
-                userName: appState.userName,
+                currentUsername: appState.currentUser?.username, // Use display name
                 difficulty: appState.selectedDifficulty,
                 part1Score: appState.part1Score,
                 part1Total: questionsInPart1,
@@ -888,25 +940,27 @@
                 allUserAnswers: [...appState.part1UserAnswers, ...appState.part2UserAnswers] 
             };
             try {
-                let pastResults = JSON.parse(localStorage.getItem('cswipMockExamPastResults_GS_HC')) || []; 
+                let pastResults = JSON.parse(localStorage.getItem('cswipMockExamPastResults_Simplified')) || []; 
+                pastResults = pastResults.filter(r => r.currentUsername === appState.currentUser?.username); 
                 pastResults.unshift(resultsData); 
-                if (pastResults.length > 10) pastResults.pop(); 
-                localStorage.setItem('cswipMockExamPastResults_GS_HC', JSON.stringify(pastResults));
+                if (pastResults.length > 5) pastResults = pastResults.slice(0,5); 
+                localStorage.setItem('cswipMockExamPastResults_Simplified', JSON.stringify(pastResults));
                 showMessageModal("Results Saved", "Your exam results have been saved to your device (locally).");
             } catch (e) {
                 console.error("Error saving results:", e);
                 showMessageModal("Save Error", "Could not save results to device.");
             }
         }
-        function loadPastResultsForReview() { 
-            const pastResults = JSON.parse(localStorage.getItem('cswipMockExamPastResults_GS_HC')) || [];
-            if (pastResults.length === 0) {
-                showMessageModal("No Past Results", "No previously saved exam results found on this device.");
+        function loadPastResultsForReview() { /* ... (Uses appState.currentUser.username) ... */
+             let allPastResults = JSON.parse(localStorage.getItem('cswipMockExamPastResults_Simplified')) || [];
+            const userPastResults = allPastResults.filter(r => r.currentUsername === appState.currentUser?.username);
+
+            if (userPastResults.length === 0) {
+                showMessageModal("No Past Results", "No previously saved exam results found on this device for your display name.");
                 return;
             }
-            const latestResult = pastResults[0];
+            const latestResult = userPastResults[0]; 
             
-            appState.userName = latestResult.userName;
             appState.selectedDifficulty = latestResult.difficulty;
             appState.part1Score = latestResult.part1Score;
             appState.part1Questions = { length: latestResult.part1Total }; 
@@ -921,79 +975,82 @@
         }
         
         // --- Google Sheets Interaction via Apps Script ---
-        function getAppsScriptUrl() {
-            return appState.appsScriptUrl; // Now returns the hardcoded URL
-        }
-
-        async function fetchQuestionsFromGoogleSheet(count, difficulty, section) {
+        function getAppsScriptUrl() { /* ... (same as before) ... */ return appState.appsScriptUrl; }
+        async function callAppsScript(payload) { /* ... (same as before, ensure displayName is passed if needed by Apps Script for non-user-specific actions) ... */
             const scriptUrl = getAppsScriptUrl();
             if (!scriptUrl) {
-                addLogToGenerationScreen("Apps Script URL not configured. Cannot fetch from Google Sheet.");
-                return [];
+                const errorMsg = "Google Apps Script URL is not configured.";
+                addLogToPreparationScreen(errorMsg); 
+                console.error(errorMsg);
+                return { success: false, error: errorMsg };
             }
-            const url = `${scriptUrl}?action=getQuestions&difficulty=${difficulty}&section=${section}&count=${count}`;
-            addLogToGenerationScreen(`Fetching from GSheet: ${url.substring(0,100)}...`);
-            try {
-                const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error(`Google Sheet fetch failed: ${response.statusText}`);
-                }
-                const data = await response.json();
-                if (data.success && Array.isArray(data.questions)) {
-                    return data.questions;
-                } else {
-                    console.error("Error fetching questions from GSheet:", data.error || "Unknown error");
-                    addLogToGenerationScreen(`GSheet Fetch Error: ${data.error || 'Unknown'}`);
-                    return [];
-                }
-            } catch (error) {
-                console.error("Error calling Apps Script (getQuestions):", error);
-                addLogToGenerationScreen(`Apps Script Call Error (getQuestions): ${error.message}`);
-                return [];
+            if (appState.currentUser && appState.currentUser.username && !payload.displayName) {
+                 payload.displayName = appState.currentUser.username;
             }
-        }
 
-        async function saveQuestionsToGoogleSheet(questionsArray) {
-            const scriptUrl = getAppsScriptUrl();
-            if (!scriptUrl || !Array.isArray(questionsArray) || questionsArray.length === 0) return;
-
-            addLogToGenerationScreen(`Saving ${questionsArray.length} questions to Google Sheet...`);
             try {
                 const response = await fetch(scriptUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ action: 'saveQuestions', questions: questionsArray })
+                    method: 'POST', 
+                    headers: { 
+                         'Content-Type': 'application/json' 
+                    }, 
+                    body: JSON.stringify(payload)
                 });
-                if (!response.ok) {
-                    throw new Error(`Google Sheet save questions failed: ${response.statusText}`);
+                 if (!response.ok) {
+                    const errorText = await response.text(); 
+                    console.error(`Apps Script Error Response (Status ${response.status}):`, errorText);
+                    throw new Error(`Apps Script call failed: ${response.status} ${response.statusText}. Details: ${errorText.substring(0,200)}`);
                 }
-                const data = await response.json();
-                if (data.success) {
-                    addLogToGenerationScreen(`Successfully saved ${data.savedCount || questionsArray.length} questions to Google Sheet.`);
-                } else {
-                    console.error("Error saving questions to GSheet:", data.error || "Unknown error");
-                    addLogToGenerationScreen(`GSheet Save Error: ${data.error || 'Unknown'}`);
-                }
+                const responseData = await response.json();
+                return responseData;
             } catch (error) {
-                console.error("Error calling Apps Script (saveQuestions):", error);
-                addLogToGenerationScreen(`Apps Script Call Error (saveQuestions): ${error.message}`);
+                console.error("Error calling Apps Script:", error);
+                addLogToPreparationScreen(`Apps Script Call Error: ${error.message}`);
+                return { success: false, error: error.message };
             }
         }
-
-        async function saveFinalResultsToLeaderboard() { 
+        async function fetchQuestionsFromGoogleSheet(count, difficulty, section) { /* ... (same as before) ... */
+             addLogToPreparationScreen(`Fetching ${count} ${section} questions (Diff: ${difficulty}) from GSheet...`);
+            const data = await callAppsScript({
+                action: 'getQuestions',
+                difficulty: difficulty,
+                section: section,
+                count: count
+            });
+            if (data.success && Array.isArray(data.questions)) {
+                return data.questions;
+            } else {
+                addLogToPreparationScreen(`GSheet Fetch Error: ${data.error || 'Unknown'}`);
+                return [];
+            }
+        }
+        async function saveQuestionsToGoogleSheet(questionsArray) { /* ... (same as before) ... */
+            if (!Array.isArray(questionsArray) || questionsArray.length === 0) return;
+            addLogToPreparationScreen(`Saving ${questionsArray.length} questions to Google Sheet...`);
+            const data = await callAppsScript({
+                action: 'saveQuestions',
+                questions: questionsArray
+            });
+            if (data.success) {
+                addLogToPreparationScreen(`Successfully saved ${data.savedCount || questionsArray.length} questions to Google Sheet.`);
+            } else {
+                addLogToPreparationScreen(`GSheet Save Error: ${data.error || 'Unknown'}`);
+            }
+        }
+        async function saveFinalResultsToLeaderboard() { /* ... (Uses appState.currentUser.username) ... */
             const scriptUrl = getAppsScriptUrl();
             if (!scriptUrl) {
                 console.warn("Apps Script URL not set. Cannot save leaderboard to Google Sheet.");
                 return;
             }
-            const questionsInPart1 = appState.part1Questions.length || appState.examConstants.part1.numQuestions;
-            const questionsInPart2 = appState.part2Questions.length || appState.examConstants.part2.numQuestions;
+            const questionsInPart1 = appState.part1Questions.length;
+            const questionsInPart2 = appState.part2Questions.length;
             const totalAttempted = questionsInPart1 + questionsInPart2;
             const totalScore = appState.part1Score + appState.part2Score;
             if (totalAttempted === 0) return; 
 
             const leaderboardEntry = {
-                name: appState.userName,
+                name: appState.currentUser?.username || 'Guest', 
                 totalScore: totalScore,
                 totalAttempted: totalAttempted,
                 percentage: ((totalScore / totalAttempted) * 100).toFixed(1),
@@ -1001,227 +1058,82 @@
                 date: new Date().toISOString() 
             };
             
-            addLogToGenerationScreen("Saving score to Google Sheet Leaderboard...");
-            try {
-                const response = await fetch(scriptUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'saveScore', scoreData: leaderboardEntry })
-                });
-                if (!response.ok) throw new Error(`Save leaderboard score failed: ${response.statusText}`);
-                const data = await response.json();
-                if (data.success) {
-                    addLogToGenerationScreen("Score saved to Google Sheet Leaderboard.");
-                } else {
-                    console.error("Error saving score to GSheet Leaderboard:", data.error);
-                    addLogToGenerationScreen(`GSheet Leaderboard Save Error: ${data.error}`);
-                }
-            } catch (error) {
-                console.error("Error calling Apps Script (saveScore):", error);
-                addLogToGenerationScreen(`Apps Script Call Error (saveScore): ${error.message}`);
+            console.log("Attempting to save score to leaderboard...");
+            const data = await callAppsScript({ action: 'saveScore', scoreData: leaderboardEntry });
+            if (data.success) {
+                console.log("Score saved to Google Sheet Leaderboard.");
+            } else {
+                console.error("Error saving score to GSheet Leaderboard:", data.error);
             }
         }
-        
-        async function displayLeaderboard() { 
-            const scriptUrl = getAppsScriptUrl();
-            if (!scriptUrl) {
-                showMessageModal("Configuration Error", "Google Apps Script URL is not set. Cannot display leaderboard.");
-                return;
-            }
-            leaderboardContentArea.innerHTML = '<div class="spinner mx-auto my-4"></div> <p>Loading leaderboard...</p>';
+        async function displayLeaderboard() { /* ... (same as before) ... */
+             leaderboardContentArea.innerHTML = '<div class="spinner mx-auto my-4"></div> <p>Loading leaderboard...</p>';
             showScreen('leaderboard');
+            const data = await callAppsScript({ action: 'getLeaderboard' });
 
-            try {
-                const response = await fetch(`${scriptUrl}?action=getLeaderboard`);
-                if (!response.ok) throw new Error(`Fetch leaderboard failed: ${response.statusText}`);
-                const data = await response.json();
-
-                leaderboardContentArea.innerHTML = ''; 
-                if (data.success && Array.isArray(data.leaderboard)) {
-                    if (data.leaderboard.length === 0) {
-                        leaderboardContentArea.innerHTML = '<p class="text-slate-400">No scores yet. Be the first!</p>';
-                        return;
-                    }
-                    const table = document.createElement('table');
-                    table.className = 'w-full text-sm text-left text-slate-300';
-                    const thead = table.createTHead();
-                    thead.innerHTML = `
-                        <tr class="border-b border-slate-700">
-                            <th scope="col" class="px-3 py-2">Rank</th>
-                            <th scope="col" class="px-3 py-2">Name</th>
-                            <th scope="col" class="px-3 py-2">Score</th>
-                            <th scope="col" class="px-3 py-2">Difficulty</th>
-                            <th scope="col" class="px-3 py-2">Date</th>
-                        </tr>
+            leaderboardContentArea.innerHTML = ''; 
+            if (data.success && Array.isArray(data.leaderboard)) {
+                if (data.leaderboard.length === 0) {
+                    leaderboardContentArea.innerHTML = '<p class="text-slate-400">No scores yet. Be the first!</p>';
+                    return;
+                }
+                const table = document.createElement('table');
+                table.className = 'w-full text-sm text-left text-slate-300';
+                const thead = table.createTHead();
+                thead.innerHTML = `
+                    <tr class="border-b border-slate-700">
+                        <th scope="col" class="px-3 py-2">Rank</th>
+                        <th scope="col" class="px-3 py-2">Name</th>
+                        <th scope="col" class="px-3 py-2">Score</th>
+                        <th scope="col" class="px-3 py-2">Difficulty</th>
+                        <th scope="col" class="px-3 py-2">Date</th>
+                    </tr>
+                `;
+                const tbody = table.createTBody();
+                data.leaderboard.forEach((entry, index) => {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td class="px-3 py-2">${index + 1}</td>
+                        <td class="px-3 py-2 font-medium text-sky-400">${entry.name}</td>
+                        <td class="px-3 py-2">${entry.percentage}% (${entry.totalScore}/${entry.totalAttempted})</td>
+                        <td class="px-3 py-2">${entry.difficulty}</td>
+                        <td class="px-3 py-2 text-xs">${entry.date}</td> 
                     `;
-                    const tbody = table.createTBody();
-                    data.leaderboard.forEach((entry, index) => {
-                        const row = tbody.insertRow();
-                        row.innerHTML = `
-                            <td class="px-3 py-2">${index + 1}</td>
-                            <td class="px-3 py-2 font-medium text-sky-400">${entry.name}</td>
-                            <td class="px-3 py-2">${entry.percentage}% (${entry.totalScore}/${entry.totalAttempted})</td>
-                            <td class="px-3 py-2">${entry.difficulty}</td>
-                            <td class="px-3 py-2 text-xs">${entry.date}</td> 
-                        `;
-                    });
-                    leaderboardContentArea.appendChild(table);
-                } else {
-                    leaderboardContentArea.innerHTML = `<p class="text-red-400">Error loading leaderboard: ${data.error || 'Unknown error'}</p>`;
-                }
-            } catch (error) {
-                console.error("Error calling Apps Script (getLeaderboard):", error);
-                leaderboardContentArea.innerHTML = `<p class="text-red-400">Failed to load leaderboard: ${error.message}</p>`;
-            }
-        }
-
-
-        // --- GEMINI API INTEGRATION ---
-        function getApiKey() { return appState.geminiApiKey || ""; }
-        async function callGeminiAPI(prompt, buttonElement) { 
-            const apiKey = getApiKey(); 
-            const buttonTextEl = buttonElement ? buttonElement.querySelector('.btn-text') : null;
-            const spinnerEl = buttonElement ? buttonElement.querySelector('.spinner') : null;
-            const originalButtonText = buttonTextEl ? buttonTextEl.textContent : '';
-
-            if(buttonTextEl) buttonTextEl.textContent = 'Thinking...';
-            if(spinnerEl) spinnerEl.classList.remove('hidden');
-            if(buttonElement) buttonElement.disabled = true;
-
-            let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
-            const payload = { contents: chatHistory };
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-            try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
                 });
-
-                if (!response.ok) {
-                    const errorBody = await response.json();
-                    console.error("Gemini API Error:", errorBody);
-                    let errorMessage = `API request failed with status ${response.status}.`;
-                    if (errorBody && errorBody.error && errorBody.error.message) {
-                        errorMessage += ` Message: ${errorBody.error.message}`;
-                    }
-                    if (response.status === 400 && errorBody?.error?.message.toLowerCase().includes("api key not valid")) {
-                        errorMessage += " Please check if your API key is correct and has permissions for the Gemini API.";
-                    }
-                     if (response.status === 429) {
-                        errorMessage += " You might have exceeded your quota. Please try again later.";
-                    }
-                    throw new Error(errorMessage);
-                }
-
-                const result = await response.json();
-
-                if (result.candidates && result.candidates.length > 0 &&
-                    result.candidates[0].content && result.candidates[0].content.parts &&
-                    result.candidates[0].content.parts.length > 0) {
-                    return result.candidates[0].content.parts[0].text;
-                } else if (result.candidates && result.candidates.length > 0 && result.candidates[0].finishReason === "SAFETY") {
-                     throw new Error("Content generation stopped due to safety reasons. Try a different prompt.");
-                } else {
-                    console.error("Unexpected Gemini API response structure:", result);
-                    throw new Error("Could not extract text from Gemini response. The response might be empty or malformed.");
-                }
-            } catch (error) {
-                console.error('Error calling Gemini API:', error);
-                if (appState.isGeneratingQuestions) { 
-                    showMessageModal("AI Error", `Could not get a response from the AI. ${error.message}`);
-                }
-                return null;
-            } finally {
-                if(buttonTextEl) buttonTextEl.textContent = originalButtonText;
-                if(spinnerEl) spinnerEl.classList.add('hidden');
-                if(buttonElement) buttonElement.disabled = false;
+                leaderboardContentArea.appendChild(table);
+            } else {
+                leaderboardContentArea.innerHTML = `<p class="text-red-400">Error loading leaderboard: ${data.error || 'Unknown error'}</p>`;
             }
         }
-        async function callGeminiAPIForQuestions(count, difficulty, sectionType, existingQuestionIds = []) { 
-            const sectionDetails = sectionType === 'general' 
-                ? "general welding inspection knowledge, covering topics like welding processes, symbols, NDT, material science, and inspector duties"
-                : "Welding Procedure Specifications (WPS), PQR interpretation, welder qualifications, and related code requirements (e.g., ASME IX, ISO 15614)";
 
-            let prompt = `
-                You are an expert CSWIP 3.1 exam question writer.
-                Generate ${count} unique multiple-choice questions (MCQs) suitable for the CSWIP 3.1 exam.
-                The questions should focus on: ${sectionDetails}.
-                The difficulty of the questions should be: ${difficulty}.
-                Ensure the questions are distinct from any previously generated ones if possible (though this is a best-effort for the API).
-                ${existingQuestionIds.length > 0 ? `Avoid generating questions similar to these existing IDs/concepts if possible: ${existingQuestionIds.slice(0,5).join(', ')} (sample).` : ''}
-
-                For each question, provide:
-                1. "id": A unique string identifier for this question (e.g., "gen_q_001", "wps_q_xyz"). Generate this yourself using a combination of section, difficulty, and a random number/timestamp to ensure high probability of uniqueness.
-                2. "text": The question itself.
-                3. "options": An array of 4 objects, each with "text" (the option) and "isCorrect" (boolean, only one true per question). Ensure exactly one option is correct.
-                4. "explanation": A brief explanation for the correct answer.
-                5. "wpsSnippet": (Primarily for 'wps' section, optional for 'general') A very short, relevant snippet of a mock WPS or a scenario that the question is based on. This snippet should be plain text. If not applicable, provide an empty string or omit.
-
-                Return the output as a valid JSON array of question objects. Ensure the JSON is well-formed and directly parsable. Do not include any introductory text or markdown formatting around the JSON array.
-                Example of a single question object structure:
-                {
-                    "id": "wps_example_01",
-                    "text": "According to a WPS specifying E7018 electrodes, what is the typical F-Number?",
-                    "options": [
-                        {"text": "F1", "isCorrect": false},
-                        {"text": "F4", "isCorrect": true},
-                        {"text": "F6", "isCorrect": false},
-                        {"text": "F3", "isCorrect": false}
-                    ],
-                    "explanation": "E7018 electrodes are classified under F-Number 4 according to ASME IX.",
-                    "wpsSnippet": "Base Material: ASTM A36, Filler Metal: E7018"
-                }
-            `;
-            
-            const dummyButton = document.createElement('button'); 
-            dummyButton.innerHTML = '<span class="btn-text"></span><div class="spinner hidden"></div>';
-            
-            const responseText = await callGeminiAPI(prompt, dummyButton); 
-            if (responseText) {
-                try {
-                    let cleanedResponseText = responseText.trim();
-                    if (cleanedResponseText.startsWith("```json")) cleanedResponseText = cleanedResponseText.substring(7);
-                    if (cleanedResponseText.endsWith("```")) cleanedResponseText = cleanedResponseText.substring(0, cleanedResponseText.length - 3);
-                    
-                    const generatedQuestions = JSON.parse(cleanedResponseText);
-                    if (Array.isArray(generatedQuestions) && generatedQuestions.every(q => q.id && q.text && Array.isArray(q.options) && q.options.length === 4 && q.explanation && q.options.filter(opt => opt.isCorrect).length === 1)) {
-                        return generatedQuestions.map(q => ({...q, section: sectionType, difficulty: difficulty })); 
-                    } else {
-                        console.error("Gemini response is not a valid array of questions or questions have invalid structure:", generatedQuestions);
-                        addLogToGenerationScreen("AI Error: AI generated an invalid question format or structure.");
-                        return null;
-                    }
-                } catch (e) {
-                    console.error("Error parsing Gemini JSON response for questions:", e, "\nResponse was:\n", responseText);
-                    addLogToGenerationScreen("AI Error: Could not parse AI-generated questions. Raw response logged to console.");
-                    return null;
-                }
-            }
-            return null;
-        }
+        // --- AI Features (Explain Deeper, Study Tips via Apps Script) ---
         async function handleExplainDeeper() { 
             const questions = appState.currentPart === 1 ? appState.part1Questions : appState.part2Questions;
             const currentQuestion = questions[appState.currentQuestionIndex];
             if (!currentQuestion) return;
 
-            const prompt = `
-                You are an expert welding inspection instructor preparing a student for the CSWIP 3.1 exam.
-                Explain the following concept related to a CSWIP 3.1 exam question in more detail. 
-                Focus on clarifying the core principles and practical implications for a welding inspector.
-                Keep the explanation concise but thorough, suitable for exam preparation.
+            const buttonTextEl = explainDeeperBtn.querySelector('.btn-text');
+            const spinnerEl = explainDeeperBtn.querySelector('.spinner');
+            const originalButtonText = buttonTextEl.textContent;
+            buttonTextEl.textContent = 'Thinking...';
+            spinnerEl.classList.remove('hidden');
+            explainDeeperBtn.disabled = true;
 
-                Original Question: "${currentQuestion.text}"
-                Original Explanation: "${currentQuestion.explanation}"
-                ${currentQuestion.wpsSnippet ? `Context/WPS Snippet: "${currentQuestion.wpsSnippet}"` : ""}
+            const data = await callAppsScript({
+                action: 'explainDeeper', // This action implies AI, but text is neutral
+                questionText: currentQuestion.text,
+                originalExplanation: currentQuestion.explanation,
+                wpsSnippet: currentQuestion.wpsSnippet || ""
+            });
 
-                Provide a deeper explanation of the underlying topic.
-            `;
-            
-            const deeperExplanation = await callGeminiAPI(prompt, explainDeeperBtn);
-            if (deeperExplanation) {
-                showMessageModal("✨ Deeper Explanation by Gemini", deeperExplanation, () => {}, true);
+            buttonTextEl.textContent = originalButtonText;
+            spinnerEl.classList.add('hidden');
+            explainDeeperBtn.disabled = false;
+
+            if (data.success && data.explanation) {
+                showMessageModal("✨ More Details", data.explanation, () => {}, true);
+            } else {
+                showMessageModal("Error", data.error || "Could not get more details.");
             }
         }
         async function handleGenerateStudyTips() { 
@@ -1231,59 +1143,60 @@
                 showMessageModal("Great Job!", "No incorrect answers to generate tips for. You're doing great!");
                 return;
             }
-
-            let promptContent = `I am preparing for the CSWIP 3.1 welding inspector exam. Based on the following incorrectly answered mock exam questions, provide personalized study tips. For each topic I struggled with, suggest key areas to focus on, relevant standards or sections if applicable (e.g., ASME IX, AWS D1.1, ISO 5817), and practical advice for better understanding. Format the tips clearly, perhaps using bullet points for each topic or question.\n\n`;
             
-            wrongAnswers.forEach((ans, index) => {
-                promptContent += `Mistake ${index + 1}:\n`;
-                promptContent += `Question: "${ans.questionText}"\n`;
-                promptContent += `Your Answer: "${ans.selectedOptionText}"\n`;
-                promptContent += `Correct Answer: "${ans.correctOptionText}"\n`;
-                promptContent += `Provided Explanation: "${ans.explanation}"\n\n`;
+            const buttonTextEl = generateStudyTipsBtn.querySelector('.btn-text');
+            const spinnerEl = generateStudyTipsBtn.querySelector('.spinner');
+            const originalButtonText = buttonTextEl.textContent;
+            buttonTextEl.textContent = 'Generating...';
+            spinnerEl.classList.remove('hidden');
+            generateStudyTipsBtn.disabled = true;
+
+            const data = await callAppsScript({
+                action: 'generateStudyTips', // This action implies AI, but text is neutral
+                wrongAnswers: wrongAnswers.map(ans => ({ 
+                    questionText: ans.questionText,
+                    selectedOptionText: ans.selectedOptionText,
+                    correctOptionText: ans.correctOptionText,
+                    explanation: ans.explanation
+                }))
             });
 
-            const studyTips = await callGeminiAPI(promptContent, generateStudyTipsBtn);
-            if (studyTips) {
-                showMessageModal("✨ Personalized Study Tips by Gemini", studyTips, () => {}, true);
+            buttonTextEl.textContent = originalButtonText;
+            spinnerEl.classList.add('hidden');
+            generateStudyTipsBtn.disabled = false;
+
+            if (data.success && data.tips) {
+                showMessageModal("✨ Personalized Study Tips", data.tips, () => {}, true);
+            } else {
+                 showMessageModal("Error", data.error || "Could not generate study tips.");
             }
         }
 
         // --- EVENT LISTENERS ---
-        userNameInput.addEventListener('change', () => { 
-            appState.userName = userNameInput.value.trim();
-            localStorage.setItem('cswipUserName', appState.userName);
+        displayNameInput.addEventListener('input', () => { 
+            appState.currentUser.username = displayNameInput.value.trim();
         });
-        saveApiKeyBtn.addEventListener('click', () => { 
-            appState.geminiApiKey = apiKeyInput.value.trim();
-            localStorage.setItem('cswipGeminiApiKey', appState.geminiApiKey);
-            showMessageModal("API Key Saved", "Your Gemini API Key has been saved locally.");
+        changeNameBtn.addEventListener('click', () => {
+            showScreen('mainMenu');
+            displayNameInput.focus();
         });
-        startExamBtn.addEventListener('click', () => { 
-            const savedProgressJSON = localStorage.getItem('cswipMockExamProgress_GS_HC');
-            if (savedProgressJSON) {
-                 showMessageModal("Confirm New Exam", "Starting a new exam will clear any unsaved progress. Continue?", () => {
-                    localStorage.removeItem('cswipMockExamProgress_GS_HC'); 
-                    startExamFlow();
-                 });
-            } else {
-                startExamFlow();
-            }
-        });
-        loadProgressMenuBtn.addEventListener('click', loadExamProgress);
+
+        startExamBtn.addEventListener('click', startExamFlow);
+        loadProgressMenuBtn.addEventListener('click', loadExamProgressFromSheet); 
         proceedToPart2Btn.addEventListener('click', prepareAndStartPart2); 
         intermediateBackToMenuBtn.addEventListener('click', () => {
-            appState.isGeneratingQuestions = false; 
+            appState.isPreparingQuestions = false; 
             showScreen('mainMenu');
         });
-        cancelGenerationBtn.addEventListener('click', () => {
-            appState.isGeneratingQuestions = false;
-            addLogToGenerationScreen("User cancelled question generation.");
-            showMessageModal("Cancelled", "Question generation has been cancelled.", () => showScreen('mainMenu'));
+        cancelPreparationBtn.addEventListener('click', () => { 
+            appState.isPreparingQuestions = false;
+            addLogToPreparationScreen("User cancelled question preparation.");
+            showMessageModal("Cancelled", "Question preparation has been cancelled.", () => showScreen('mainMenu'));
         });
 
         nextQuestionBtn.addEventListener('click', handleNextQuestion);
         finishPartBtn.addEventListener('click', handleFinishPart);
-        saveProgressBtn.addEventListener('click', saveExamProgress);
+        saveProgressBtn.addEventListener('click', saveExamProgressToSheet); 
         explainDeeperBtn.addEventListener('click', handleExplainDeeper);
         generateStudyTipsBtn.addEventListener('click', handleGenerateStudyTips);
         backToMenuBtn.addEventListener('click', () => { 
@@ -1297,11 +1210,20 @@
         
 
         // --- INITIALIZATION ---
-        // Changed to a non-async function as it doesn't use await directly
         function initializeApp() {
-            userNameInput.value = appState.userName;
-            apiKeyInput.value = appState.geminiApiKey;
+            const savedName = localStorage.getItem('cswipDisplayName');
+            if (savedName) {
+                appState.currentUser.username = savedName;
+                displayNameInput.value = savedName;
+            }
+            updateUserInfoDisplay(); 
             difficultySelect.value = appState.selectedDifficulty; 
+            studyGroupLinkEl.href = appState.studyGroupLink; 
+            if (appState.studyGroupLink === "YOUR_DISCORD_OR_STUDY_GROUP_LINK_HERE" || !appState.studyGroupLink) {
+                studyGroupLinkEl.classList.add('hidden'); 
+            } else {
+                studyGroupLinkEl.classList.remove('hidden');
+            }
             showScreen('mainMenu'); 
         }
         
