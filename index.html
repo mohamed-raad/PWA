@@ -26,7 +26,7 @@
         .btn-secondary { @apply bg-slate-600 hover:bg-slate-700 text-white; }
         .btn-success { @apply bg-green-500 hover:bg-green-600 text-white; }
         .btn-danger { @apply bg-red-500 hover:bg-red-600 text-white; }
-        .btn-info { @apply bg-teal-500 hover:bg-teal-600 text-white; } /* Changed from btn-ai */
+        .btn-info { @apply bg-teal-500 hover:bg-teal-600 text-white; } 
         .btn-warning { @apply bg-amber-500 hover:bg-amber-600 text-white; }
 
         .option-btn { 
@@ -86,7 +86,7 @@
 
     <div id="user-info-display" class="hidden"> User: <span id="display-name-output"></span> 
         <button id="change-name-btn" class="ml-2 text-sky-400 hover:text-sky-300 text-xs">(Change Name)</button>
-    </div>
+        </div>
 
     <div id="app-container" class="w-full max-w-4xl glassmorphism rounded-xl shadow-2xl p-6 md:p-8">
         <div id="main-menu-screen" class="screen active">
@@ -174,7 +174,8 @@
                 
                 <div id="feedback-area" class="mt-6 p-4 rounded-lg min-h-[80px] hidden">
                     <p id="feedback-text" class="text-md mb-2"></p>
-                    <button id="explain-deeper-btn" class="btn btn-info text-sm py-2 px-4 hidden"> <span class="btn-text">✨ Get More Details</span>
+                    <button id="explain-deeper-btn" class="btn btn-info text-sm py-2 px-4 hidden"> 
+                        <span class="btn-text">✨ Get More Details</span>
                         <div class="spinner hidden"></div>
                     </button>
                 </div>
@@ -201,7 +202,8 @@
                 </div>
 
                 <div class="mt-8 flex flex-col sm:flex-row justify-center gap-4">
-                    <button id="generate-study-tips-btn" class="btn btn-info w-full sm:w-auto"> <span class="btn-text">✨ Get Study Tips</span>
+                    <button id="generate-study-tips-btn" class="btn btn-info w-full sm:w-auto"> 
+                         <span class="btn-text">✨ Get Study Tips</span>
                          <div class="spinner hidden"></div>
                     </button>
                     <button id="save-results-to-device-btn" class="btn btn-success w-full sm:w-auto">Save Results to Device (Local)</button>
@@ -242,7 +244,7 @@
             currentPart: 1, 
             examConstants: { 
                 part1: { name: "General Knowledge", numQuestions: 80, durationMinutes: 80, section: "general" },
-                part2: { name: "Scenario-Based WPS Questions", numQuestions: 40, durationMinutes: 40, section: "wps" } // Renamed
+                part2: { name: "Scenario-Based WPS Questions", numQuestions: 40, durationMinutes: 40, section: "wps" } 
             },
             part1Questions: [],
             part2Questions: [], 
@@ -516,14 +518,15 @@
             const needed = partConfig.numQuestions - questions.length;
             if (needed > 0) {
                 if (!appState.isPreparingQuestions) return questions.slice(0, partConfig.numQuestions);
-                addLogToPreparationScreen(`Need to generate ${needed} more questions for ${partConfig.name} using question generation service.`);
+                addLogToPreparationScreen(`Need to generate ${needed} more questions for ${partConfig.name}.`);
                 preparationStatusEl.textContent = `Generating ${needed} questions for ${partConfig.name}...`;
                 
                 const newlyGenerated = await generateQuestionsInBatches(needed, difficulty, partConfig.section);
                  if (!appState.isPreparingQuestions) return questions.slice(0, partConfig.numQuestions);
 
                 if (newlyGenerated && newlyGenerated.length > 0) {
-                    addLogToPreparationScreen(`Generated ${newlyGenerated.length} new questions. Saving to Google Sheet...`);
+                    addLogToPreparationScreen(`System generated ${newlyGenerated.length} new questions. Saving to Google Sheet...`);
+                    // Immediate save of this newly generated batch
                     await saveQuestionsToGoogleSheet(newlyGenerated); 
                     questions = questions.concat(newlyGenerated);
                     questions = shuffleArray(questions);
@@ -531,6 +534,7 @@
             }
             return questions.slice(0, partConfig.numQuestions);
         }
+
         async function generateQuestionsInBatches(totalNeeded, difficulty, section) { 
             let allNewQuestions = [];
             const batchSize = 10;
@@ -548,8 +552,8 @@
                 addLogToPreparationScreen(`Requesting batch ${i + 1}/${numBatches} (${questionsInThisBatch} ${section} questions, Difficulty: ${difficulty}).`);
                 displayDynamicStudyTip(); 
 
-                const batch = await callAppsScript({
-                    action: 'generateQuestionsWithGemini', // This action name implies Gemini, but the user won't see it.
+                const batchResult = await callAppsScript({
+                    action: 'generateQuestionsWithSystem', 
                     count: questionsInThisBatch,
                     difficulty: difficulty,
                     sectionType: section,
@@ -557,11 +561,13 @@
 
                 if (!appState.isPreparingQuestions) break; 
 
-                if (batch && batch.success && batch.questions && batch.questions.length > 0) {
-                    addLogToPreparationScreen(`Received ${batch.questions.length} questions for batch ${i + 1}.`);
-                    allNewQuestions = allNewQuestions.concat(batch.questions);
+                if (batchResult && batchResult.success && batchResult.questions && batchResult.questions.length > 0) {
+                    addLogToPreparationScreen(`Received ${batchResult.questions.length} questions for batch ${i + 1}. Saving this batch...`);
+                    allNewQuestions = allNewQuestions.concat(batchResult.questions);
+                    // Save this individual batch immediately
+                    await saveQuestionsToGoogleSheet(batchResult.questions); 
                 } else {
-                    addLogToPreparationScreen(`Failed to get questions for batch ${i + 1} or returned empty. Error: ${batch.error || 'Unknown'}`);
+                    addLogToPreparationScreen(`Failed to get questions for batch ${i + 1} or returned empty. Error: ${batchResult.error || 'Unknown'}`);
                     if (i < numBatches -1) { 
                         addLogToPreparationScreen("Skipping to next batch due to empty/failed current batch.");
                     } else {
@@ -805,7 +811,6 @@
             return newArray;
         }
         
-        // --- Progress Saving/Loading to/from Google Sheet via Apps Script ---
         async function saveExamProgressToSheet() {
             if (!appState.examInProgress && !appState.isPreparingQuestions) {
                 showMessageModal("Info", "No exam in progress to save.");
@@ -872,9 +877,8 @@
                                 
                 appState.selectedDifficulty = progressData.difficulty;
                 appState.currentPart = progressData.currentPart;
-                // Questions are stored as IDs, they will be re-fetched by ensureQuestionsForPart
-                appState.part1Questions = []; // Will be repopulated
-                appState.part2Questions = []; // Will be repopulated
+                appState.part1Questions = []; 
+                appState.part2Questions = []; 
 
                 appState.currentQuestionIndex = progressData.currentQuestionIndex || 0;
                 appState.part1UserAnswers = progressData.part1UserAnswers || [];
@@ -895,19 +899,24 @@
                     } else { 
                         addLogToPreparationScreen(`Resuming Part ${appState.currentPart}. Questions will be re-fetched.`);
                         if (appState.currentPart === 1) {
-                            // We need to ensure Part 1 questions are loaded based on saved IDs if possible,
-                            // or re-prepare Part 1 if not. For simplicity, re-prepare.
-                            startExamFlow(); 
+                            appState.isPreparingQuestions = true; 
+                            appState.part1Questions = await ensureQuestionsForPart(appState.examConstants.part1, appState.selectedDifficulty);
+                            if (appState.part1Questions && appState.part1Questions.length > 0) {
+                                startCurrentPart();
+                            } else {
+                                showMessageModal("Load Error", "Could not re-load questions for Part 1.", () => showScreen('mainMenu'));
+                            }
                         } else { 
-                             // If resuming Part 2, we assume Part 1 was completed.
-                             // We need to load Part 1 answers and score, then prepare Part 2.
-                             // This simplified load will re-prepare Part 2.
-                             // A more robust resume would fetch Part 1 questions by ID from sheet.
-                             // For now, to ensure Part 1 state is somewhat correct before Part 2:
-                             appState.part1Questions = progressData.part1Questions.map(id => ({id: id})); // Placeholder with IDs
-                             // This is still not ideal as full question objects are needed.
-                             // Best to restart the appropriate part's preparation.
-                             prepareAndStartPart2();
+                             appState.isPreparingQuestions = true;
+                             // First, ensure Part 1 questions are "loaded" (even if just IDs from progressData, then fetch full)
+                             // This is a simplification: we're assuming Part 1 data is implicitly okay to skip to Part 2 prep.
+                             // A truly robust resume would re-verify Part 1 questions if needed.
+                             appState.part2Questions = await ensureQuestionsForPart(appState.examConstants.part2, appState.selectedDifficulty);
+                             if (appState.part2Questions && appState.part2Questions.length > 0) {
+                                startCurrentPart();
+                             } else {
+                                 showMessageModal("Load Error", "Could not re-load questions for Part 2.", () => showScreen('mainMenu'));
+                             }
                         }
                     }
                 });
@@ -917,7 +926,7 @@
             }
         }
 
-        function saveResultsToDevice() { /* ... (Uses appState.currentUser.username) ... */
+        function saveResultsToDevice() { 
              const questionsInPart1 = appState.part1Questions.length;
             const questionsInPart2 = appState.part2Questions.length;
             const totalAttempted = questionsInPart1 + questionsInPart2;
@@ -925,7 +934,7 @@
             const percentage = totalAttempted > 0 ? (totalScore / totalAttempted) * 100 : 0;
 
             const resultsData = {
-                currentUsername: appState.currentUser?.username, // Use display name
+                currentUsername: appState.currentUser?.username, 
                 difficulty: appState.selectedDifficulty,
                 part1Score: appState.part1Score,
                 part1Total: questionsInPart1,
@@ -951,7 +960,7 @@
                 showMessageModal("Save Error", "Could not save results to device.");
             }
         }
-        function loadPastResultsForReview() { /* ... (Uses appState.currentUser.username) ... */
+        function loadPastResultsForReview() { 
              let allPastResults = JSON.parse(localStorage.getItem('cswipMockExamPastResults_Simplified')) || [];
             const userPastResults = allPastResults.filter(r => r.currentUsername === appState.currentUser?.username);
 
@@ -975,8 +984,8 @@
         }
         
         // --- Google Sheets Interaction via Apps Script ---
-        function getAppsScriptUrl() { /* ... (same as before) ... */ return appState.appsScriptUrl; }
-        async function callAppsScript(payload) { /* ... (same as before, ensure displayName is passed if needed by Apps Script for non-user-specific actions) ... */
+        function getAppsScriptUrl() { return appState.appsScriptUrl; }
+        async function callAppsScript(payload) { 
             const scriptUrl = getAppsScriptUrl();
             if (!scriptUrl) {
                 const errorMsg = "Google Apps Script URL is not configured.";
@@ -1009,7 +1018,7 @@
                 return { success: false, error: error.message };
             }
         }
-        async function fetchQuestionsFromGoogleSheet(count, difficulty, section) { /* ... (same as before) ... */
+        async function fetchQuestionsFromGoogleSheet(count, difficulty, section) { 
              addLogToPreparationScreen(`Fetching ${count} ${section} questions (Diff: ${difficulty}) from GSheet...`);
             const data = await callAppsScript({
                 action: 'getQuestions',
@@ -1024,7 +1033,7 @@
                 return [];
             }
         }
-        async function saveQuestionsToGoogleSheet(questionsArray) { /* ... (same as before) ... */
+        async function saveQuestionsToGoogleSheet(questionsArray) { 
             if (!Array.isArray(questionsArray) || questionsArray.length === 0) return;
             addLogToPreparationScreen(`Saving ${questionsArray.length} questions to Google Sheet...`);
             const data = await callAppsScript({
@@ -1037,7 +1046,7 @@
                 addLogToPreparationScreen(`GSheet Save Error: ${data.error || 'Unknown'}`);
             }
         }
-        async function saveFinalResultsToLeaderboard() { /* ... (Uses appState.currentUser.username) ... */
+        async function saveFinalResultsToLeaderboard() { 
             const scriptUrl = getAppsScriptUrl();
             if (!scriptUrl) {
                 console.warn("Apps Script URL not set. Cannot save leaderboard to Google Sheet.");
@@ -1066,7 +1075,7 @@
                 console.error("Error saving score to GSheet Leaderboard:", data.error);
             }
         }
-        async function displayLeaderboard() { /* ... (same as before) ... */
+        async function displayLeaderboard() { 
              leaderboardContentArea.innerHTML = '<div class="spinner mx-auto my-4"></div> <p>Loading leaderboard...</p>';
             showScreen('leaderboard');
             const data = await callAppsScript({ action: 'getLeaderboard' });
@@ -1106,7 +1115,7 @@
             }
         }
 
-        // --- AI Features (Explain Deeper, Study Tips via Apps Script) ---
+        // --- Helper Features (Explain Deeper, Study Tips via Apps Script) ---
         async function handleExplainDeeper() { 
             const questions = appState.currentPart === 1 ? appState.part1Questions : appState.part2Questions;
             const currentQuestion = questions[appState.currentQuestionIndex];
@@ -1120,7 +1129,7 @@
             explainDeeperBtn.disabled = true;
 
             const data = await callAppsScript({
-                action: 'explainDeeper', // This action implies AI, but text is neutral
+                action: 'explainDeeperWithSystem', 
                 questionText: currentQuestion.text,
                 originalExplanation: currentQuestion.explanation,
                 wpsSnippet: currentQuestion.wpsSnippet || ""
@@ -1152,7 +1161,7 @@
             generateStudyTipsBtn.disabled = true;
 
             const data = await callAppsScript({
-                action: 'generateStudyTips', // This action implies AI, but text is neutral
+                action: 'generateStudyTipsWithSystem', 
                 wrongAnswers: wrongAnswers.map(ans => ({ 
                     questionText: ans.questionText,
                     selectedOptionText: ans.selectedOptionText,
